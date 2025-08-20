@@ -40,11 +40,11 @@ export default function Home() {
                   <FlaskConical className="h-4 w-4" />
                   Next-Generation Agricultural Intelligence
                 </div>
-                <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent leading-tight">
+                <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent leading-tight font-sans">
                   Decode Genetics for 
-                  <span className="block">Climate Resilience</span>
+                  <span className="block font-serif">Climate Resilience</span>
                 </h1>
-                <p className="text-xl text-slate-600 leading-relaxed max-w-2xl">
+                <p className="text-xl text-slate-600 leading-relaxed max-w-2xl font-sans">
                   Harness the power of AI to predict genetic mutations that enhance crop tolerance to drought, salinity, and extreme weather conditions. Build the sustainable food systems of tomorrow.
                 </p>
               </motion.div>

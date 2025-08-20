@@ -14,12 +14,14 @@ import {
   Dna, 
   FlaskConical, 
   BarChart3, 
+  AlertTriangle,
   CheckCircle,
   Zap,
   Clock,
   Download,
   BookOpen,
-  Target
+  Target,
+  X
 } from "lucide-react";
 
 // Simulated gene data with more realistic information
@@ -83,6 +85,7 @@ const generatePrediction = (sequence: string, position: number, mutation: string
 
   // Simple heuristic based on amino acid properties
   const beneficial = ["A", "G", "S", "T", "V"];
+  const detrimental = ["P", "C", "M", "W"];
 
   if (beneficial.includes(mutation) && !beneficial.includes(wildType)) {
     impact = "Beneficial";
@@ -136,6 +139,7 @@ export default function GeneDetailPage() {
   const [mutationInput, setMutationInput] = useState("");
   const [prediction, setPrediction] = useState<PredictionResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisHistory, setAnalysisHistory] = useState<PredictionResult[]>([]);
 
   const gene = GENE_DATA[geneId as keyof typeof GENE_DATA];
 
@@ -154,6 +158,7 @@ export default function GeneDetailPage() {
     );
     
     setPrediction(result);
+    setAnalysisHistory(prev => [result, ...prev.slice(0, 4)]); // Keep last 5 predictions
     setIsAnalyzing(false);
   };
 

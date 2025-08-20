@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { AuthProvider } from "@/lib/auth-context";
 
 const alexandria = Alexandria({ subsets: ["latin"], variable: "--font-alexandria" });
 const artifika = Artifika({ subsets: ["latin"], weight: ["400"], variable: "--font-artifika" });
@@ -22,13 +23,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${alexandria.variable} ${artifika.variable} ${b612mono.variable} antialiased bg-white text-slate-900 min-h-screen`}>
-        <TooltipProvider>
-          <Header />
-          <main className="relative">{children}</main>
-          <Footer />
-          <Toaster richColors closeButton position="top-right" />
-        </TooltipProvider>
+      <body className={`${alexandria.variable} ${artifika.variable} ${b612mono.variable} font-sans antialiased bg-white text-slate-900 min-h-screen`}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Header />
+            <main className="relative">{children}</main>
+            <Footer />
+            <Toaster richColors closeButton position="top-right" />
+          </TooltipProvider>
+        </AuthProvider>
       </body>
     </html>
   );

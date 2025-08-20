@@ -84,9 +84,9 @@
   --sidebar-accent-foreground: oklch(0.9859 0.0213 154.1400);
   --sidebar-border: oklch(0.3449 0.0513 250.4988);
   --sidebar-ring: oklch(0.7096 0.1434 154.5316);
-  --font-sans: var(--font-alexandria);
-  --font-serif: var(--font-artifika);
-  --font-mono: var(--font-b612-mono);
+  --font-sans: Alexandria, ui-sans-serif, sans-serif, system-ui;
+  --font-serif: Artifika, ui-serif, serif;
+  --font-mono: B612 Mono, ui-monospace, monospace;
   --radius: 0.5rem;
   --shadow-2xs: 0px 8px 24px -8px hsl(0 0% 0% / 0.05);
   --shadow-xs: 0px 8px 24px -8px hsl(0 0% 0% / 0.05);
