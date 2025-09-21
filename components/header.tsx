@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { usePathname } from "next/navigation";
-import { Dna, FlaskConical, History, BookOpen, Sparkles } from "lucide-react";
+import { Dna, FlaskConical, History, BookOpen, Sparkles, Microscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { Menu } from "lucide-react";
@@ -11,6 +11,7 @@ import { useState } from "react";
 const navItems = [
   { href: "/", label: "Home", icon: Sparkles },
   { href: "/genes", label: "Explore Genes", icon: Dna },
+  { href: "/lab", label: "In-Silico Lab", icon: Microscope },
   { href: "/history", label: "History", icon: History },
   { href: "/docs", label: "Docs", icon: BookOpen },
 ];
