@@ -1,4 +1,4 @@
-# 🌾 BoHarvest AI
+# 🌾 BioHarvest AI
 
 **AI-Powered Precision Harvesting: Smart, Efficient, Sustainable.**
 
