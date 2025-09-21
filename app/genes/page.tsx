@@ -7,90 +7,20 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Search, Dna, Droplet, Leaf, FlaskConical, Filter, Zap, Download, Share2 } from "lucide-react";
+import { ChevronRight, Search, Dna, Droplet, Leaf, FlaskConical, Filter, Zap, Download, Share2, Eye, BookOpen, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DEMO_GENES } from "@/lib/demo-data";
+import { simulateGeneSearch } from "@/lib/ai-service";
 
-type Gene = {
-  id: string;
-  name: string;
-  trait: "Drought Tolerance" | "Salt Tolerance" | "Heat Resistance" | "Disease Resistance";
-  description: string;
-  organism: string;
-  chromosome: string;
-  confidence: number;
-  citations: number;
-};
+type Gene = typeof DEMO_GENES[0];
 
-const GENES: Gene[] = [
-  {
-    id: "DREB1A",
-    name: "DREB1A",
-    trait: "Drought Tolerance",
-    description: "Key transcription factor regulating stress-responsive gene expression under drought conditions.",
-    organism: "Arabidopsis thaliana",
-    chromosome: "Chr1",
-    confidence: 0.95,
-    citations: 1247
-  },
-  {
-    id: "NHX1",
-    name: "NHX1",
-    trait: "Salt Tolerance",
-    description: "Vacuolar Na+/H+ antiporter essential for cellular salt tolerance and osmotic adjustment.",
-    organism: "Oryza sativa",
-    chromosome: "Chr5",
-    confidence: 0.92,
-    citations: 892
-  },
-  {
-    id: "HSP70",
-    name: "HSP70",
-    trait: "Heat Resistance",
-    description: "Heat shock protein providing thermotolerance through protein folding assistance.",
-    organism: "Zea mays",
-    chromosome: "Chr3",
-    confidence: 0.88,
-    citations: 654
-  },
-  {
-    id: "RPM1",
-    name: "RPM1",
-    trait: "Disease Resistance",
-    description: "Resistance protein conferring immunity against bacterial and fungal pathogens.",
-    organism: "Solanum lycopersicum",
-    chromosome: "Chr6",
-    confidence: 0.90,
-    citations: 743
-  },
-  {
-    id: "LEA14",
-    name: "LEA14",
-    trait: "Drought Tolerance",
-    description: "Late embryogenesis abundant protein protecting cells during water stress.",
-    organism: "Triticum aestivum",
-    chromosome: "Chr2",
-    confidence: 0.87,
-    citations: 521
-  },
-  {
-    id: "SOS1",
-    name: "SOS1",
-    trait: "Salt Tolerance",
-    description: "Salt overly sensitive protein regulating sodium efflux and ionic homeostasis.",
-    organism: "Glycine max",
-    chromosome: "Chr8",
-    confidence: 0.93,
-    citations: 976
-  }
-];
-
-const getTraitColor = (trait: Gene["trait"]) => {
+const getTraitColor = (trait: string) => {
   switch (trait) {
     case "Drought Tolerance":
       return { bg: "bg-amber-100", text: "text-amber-700", border: "border-amber-300", icon: Droplet };
     case "Salt Tolerance":
       return { bg: "bg-blue-100", text: "text-blue-700", border: "border-blue-300", icon: Zap };
-    case "Heat Resistance":
+    case "Heat Tolerance":
       return { bg: "bg-red-100", text: "text-red-700", border: "border-red-300", icon: FlaskConical };
     case "Disease Resistance":
       return { bg: "bg-green-100", text: "text-green-700", border: "border-green-300", icon: Leaf };
@@ -102,13 +32,15 @@ const getTraitColor = (trait: Gene["trait"]) => {
 // Export and Share Functions
 const exportGeneData = (gene: Gene) => {
   const data = {
+    id: gene.id,
     name: gene.name,
+    scientificName: gene.scientificName,
     organism: gene.organism,
-    trait: gene.trait,
+    traits: gene.traits,
     description: gene.description,
-    chromosome: gene.chromosome,
     confidence: gene.confidence,
-    citations: gene.citations,
+    sequence: gene.sequence,
+    applications: gene.applications,
     exportedAt: new Date().toISOString(),
     exportedBy: "BioHarvest AI Platform"
   };
@@ -117,7 +49,7 @@ const exportGeneData = (gene: Gene) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `${gene.name}_gene_data.json`;
+  a.download = `${gene.id}_gene_data.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -127,7 +59,7 @@ const exportGeneData = (gene: Gene) => {
 const shareGene = async (gene: Gene) => {
   const shareData = {
     title: `${gene.name} - BioHarvest AI`,
-    text: `Check out this ${gene.trait} gene: ${gene.name} (${gene.organism}) - ${gene.description}`,
+    text: `Check out this ${gene.traits[0]} gene: ${gene.name} (${gene.organism}) - ${gene.description}`,
     url: `${window.location.origin}/genes/${gene.id}`
   };
 
@@ -147,41 +79,53 @@ const shareGene = async (gene: Gene) => {
 
 export default function GeneExplorerPage() {
   const [query, setQuery] = useState("");
-  const [traitFilter, setTraitFilter] = useState<"All" | Gene["trait"]>("All");
-  const [sortBy, setSortBy] = useState<"name" | "confidence" | "citations">("confidence");
+  const [traitFilter, setTraitFilter] = useState<"All" | string>("All");
+  const [organismFilter, setOrganismFilter] = useState<"All" | string>("All");
+  const [searchResults, setSearchResults] = useState<Gene[]>(DEMO_GENES);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    let base = GENES.filter((g) =>
-      traitFilter === "All" ? true : g.trait === traitFilter
-    );
-    
-    if (q) {
-      base = base.filter(
-        (g) => 
-          g.name.toLowerCase().includes(q) || 
-          g.trait.toLowerCase().includes(q) ||
-          g.description.toLowerCase().includes(q) ||
-          g.organism.toLowerCase().includes(q)
-      );
+  const filteredGenes = useMemo(() => {
+    return searchResults.filter((gene) => {
+      const matchesQuery = query === "" || 
+        gene.name.toLowerCase().includes(query.toLowerCase()) ||
+        gene.scientificName.toLowerCase().includes(query.toLowerCase()) ||
+        gene.traits.some(trait => trait.toLowerCase().includes(query.toLowerCase())) ||
+        gene.organism.toLowerCase().includes(query.toLowerCase()) ||
+        gene.description.toLowerCase().includes(query.toLowerCase());
+      
+      const matchesTrait = traitFilter === "All" || gene.traits.includes(traitFilter);
+      const matchesOrganism = organismFilter === "All" || gene.organism === organismFilter;
+      
+      return matchesQuery && matchesTrait && matchesOrganism;
+    });
+  }, [searchResults, query, traitFilter, organismFilter]);
+
+  const handleSearch = async () => {
+    if (!query.trim()) {
+      setSearchResults(DEMO_GENES);
+      return;
     }
 
-    // Sort results
-    base.sort((a, b) => {
-      switch (sortBy) {
-        case "name":
-          return a.name.localeCompare(b.name);
-        case "confidence":
-          return b.confidence - a.confidence;
-        case "citations":
-          return b.citations - a.citations;
-        default:
-          return 0;
-      }
-    });
+    setIsSearching(true);
+    try {
+      // Simulate AI-powered gene search
+      const results = await simulateGeneSearch(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults(DEMO_GENES.filter(gene => 
+        gene.name.toLowerCase().includes(query.toLowerCase()) ||
+        gene.description.toLowerCase().includes(query.toLowerCase())
+      ));
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
-    return base;
-  }, [query, traitFilter, sortBy]);
+  // Get unique organisms and traits for filters
+  const organisms = ["All", ...Array.from(new Set(DEMO_GENES.map(gene => gene.organism)))];
+  const allTraits = DEMO_GENES.flatMap(gene => gene.traits);
+  const traits = ["All", ...Array.from(new Set(allTraits))];
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
@@ -203,15 +147,50 @@ export default function GeneExplorerPage() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-6">
             <Dna className="h-4 w-4" />
-            Climate-Resilience Gene Database
+            AI-Powered Gene Discovery
           </div>
           <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent mb-4">
-            Explore Crop Genes
+            Gene Explorer
           </h1>
           <p className="text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
-            Discover and analyze genes that enhance crop resilience to environmental stresses. 
-            Our curated database contains validated genetic targets for sustainable agriculture.
+            Discover and analyze climate-resilient genes with our comprehensive database of validated genetic targets for sustainable agriculture.
           </p>
+        </motion.div>
+
+        {/* Stats Overview */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+          className="grid md:grid-cols-4 gap-6 mb-8"
+        >
+          {[
+            { label: "Total Genes", value: DEMO_GENES.length, icon: Dna, color: "emerald" },
+            { label: "Organisms", value: organisms.length - 1, icon: Leaf, color: "green" },
+            { label: "Avg Confidence", value: `${Math.round(DEMO_GENES.reduce((acc, gene) => acc + gene.confidence, 0) / DEMO_GENES.length * 100)}%`, icon: BarChart3, color: "blue" },
+            { label: "Applications", value: Math.round(DEMO_GENES.reduce((acc, gene) => acc + gene.applications.length, 0) / DEMO_GENES.length), icon: BookOpen, color: "teal" }
+          ].map((stat, index) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
+            >
+              <Card className="border-slate-200 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
+                      <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+                    </div>
+                    <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center">
+                      <stat.icon className="h-6 w-6 text-emerald-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
         </motion.div>
 
         {/* Search and Filter Section */}
@@ -221,15 +200,15 @@ export default function GeneExplorerPage() {
           transition={{ duration: 0.6, delay: 0.1 }}
           className="mb-8"
         >
-          <Card className="border-emerald-200 bg-white/80 backdrop-blur-sm">
+          <Card className="border-emerald-200 bg-white/90 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-emerald-800">
                 <Search className="h-5 w-5" />
-                Search & Filter Genes
+                AI-Powered Gene Search
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-5">
                 <div className="md:col-span-2">
                   <Label htmlFor="search" className="text-slate-700">Search Genes</Label>
                   <div className="relative mt-2">
@@ -240,172 +219,188 @@ export default function GeneExplorerPage() {
                       className="pl-10 border-slate-200 focus:border-emerald-400 focus:ring-emerald-400"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                     />
                   </div>
                 </div>
                 
                 <div>
                   <Label className="text-slate-700">Filter by Trait</Label>
-                  <Select value={traitFilter} onValueChange={(v) => setTraitFilter(v as "All" | Gene["trait"])}>
+                  <Select value={traitFilter} onValueChange={setTraitFilter}>
                     <SelectTrigger className="mt-2 border-slate-200 focus:border-emerald-400">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="All">All Traits</SelectItem>
-                      <SelectItem value="Drought Tolerance">Drought Tolerance</SelectItem>
-                      <SelectItem value="Salt Tolerance">Salt Tolerance</SelectItem>
-                      <SelectItem value="Heat Resistance">Heat Resistance</SelectItem>
-                      <SelectItem value="Disease Resistance">Disease Resistance</SelectItem>
+                      {traits.map(trait => (
+                        <SelectItem key={trait} value={trait}>{trait}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label className="text-slate-700">Sort by</Label>
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as "name" | "confidence" | "citations")}>
+                  <Label className="text-slate-700">Filter by Organism</Label>
+                  <Select value={organismFilter} onValueChange={setOrganismFilter}>
                     <SelectTrigger className="mt-2 border-slate-200 focus:border-emerald-400">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="confidence">Confidence</SelectItem>
-                      <SelectItem value="citations">Citations</SelectItem>
-                      <SelectItem value="name">Name</SelectItem>
+                      {organisms.map(organism => (
+                        <SelectItem key={organism} value={organism}>{organism}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-200">
-                <div className="text-sm text-slate-600">
-                  Showing {filtered.length} of {GENES.length} genes
+
+                <div className="flex items-end">
+                  <Button
+                    onClick={handleSearch}
+                    disabled={isSearching}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                  >
+                    {isSearching ? "Searching..." : "AI Search"}
+                  </Button>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => { setQuery(""); setTraitFilter("All"); setSortBy("confidence"); }}
-                  className="border-slate-300 hover:bg-slate-50"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Clear Filters
-                </Button>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Gene Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((gene, index) => {
-            const traitStyle = getTraitColor(gene.trait);
-            const IconComponent = traitStyle.icon;
-            
-            return (
-              <motion.div
-                key={gene.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
-              >
-                <Card className="group hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border-slate-200 bg-white/90 backdrop-blur-sm h-full">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-12 w-12 rounded-xl ${traitStyle.bg} flex items-center justify-center`}>
-                          <IconComponent className={`h-6 w-6 ${traitStyle.text}`} />
+        {/* Results Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-800">
+              {filteredGenes.length} Gene{filteredGenes.length !== 1 ? 's' : ''} Found
+            </h2>
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-slate-500" />
+              <span className="text-sm text-slate-600">
+                {query && `"${query}" • `}
+                {traitFilter !== "All" && `${traitFilter} • `}
+                {organismFilter !== "All" && `${organismFilter}`}
+              </span>
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredGenes.map((gene, index) => {
+              const traitStyle = getTraitColor(gene.traits[0]);
+              return (
+                <motion.div
+                  key={gene.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.1 }}
+                >
+                  <Card className="h-full border-slate-200 bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-12 w-12 rounded-xl ${traitStyle.bg} flex items-center justify-center`}>
+                            <traitStyle.icon className={`h-6 w-6 ${traitStyle.text}`} />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg text-slate-800 group-hover:text-emerald-700 transition-colors">
+                              {gene.name}
+                            </CardTitle>
+                            <p className="text-sm text-slate-600">{gene.organism}</p>
+                          </div>
                         </div>
-                        <div>
-                          <CardTitle className="text-xl text-slate-800 group-hover:text-emerald-700 transition-colors">
-                            {gene.name}
-                          </CardTitle>
-                          <div className="text-sm text-slate-500 font-mono">{gene.organism}</div>
-                        </div>
+                        <Badge className={`${traitStyle.bg} ${traitStyle.text} ${traitStyle.border}`} variant="outline">
+                          {gene.traits[0]}
+                        </Badge>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            exportGeneData(gene);
-                          }}
-                          className="h-8 w-8 p-0 hover:bg-emerald-100"
-                        >
-                          <Download className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            shareGene(gene);
-                          }}
-                          className="h-8 w-8 p-0 hover:bg-emerald-100"
-                        >
-                          <Share2 className="h-4 w-4 text-slate-500" />
-                        </Button>
-                        <Link href={`/genes/${gene.id}`}>
-                          <ChevronRight className="h-5 w-5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all" />
-                        </Link>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  
-                  <Link href={`/genes/${gene.id}`}>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-slate-600 leading-relaxed">
+                    </CardHeader>
+                    
+                    <CardContent className="pt-0">
+                      <p className="text-sm text-slate-700 mb-4 line-clamp-3">
                         {gene.description}
                       </p>
                       
-                      <div className="flex items-center justify-between">
-                        <Badge className={`${traitStyle.bg} ${traitStyle.text} ${traitStyle.border} font-medium`} variant="outline">
-                          {gene.trait}
-                        </Badge>
-                        <div className="text-xs text-slate-500">
-                          {gene.chromosome}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Confidence:</span>
+                          <span className="font-medium text-emerald-600">
+                            {Math.round(gene.confidence * 100)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Applications:</span>
+                          <span className="font-medium">{gene.applications.length}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-slate-600">Organism:</span>
+                          <span className="font-medium">{gene.organism}</span>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="text-slate-600">
-                            <span className="font-medium text-emerald-700">{(gene.confidence * 100).toFixed(0)}%</span>
-                            <span className="text-slate-500 ml-1">confidence</span>
-                          </div>
-                          <div className="text-slate-600">
-                            <span className="font-medium text-slate-700">{gene.citations}</span>
-                            <span className="text-slate-500 ml-1">citations</span>
-                          </div>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => exportGeneData(gene)}
+                            className="border-slate-300 hover:bg-slate-50"
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => shareGene(gene)}
+                            className="border-slate-300 hover:bg-slate-50"
+                          >
+                            <Share2 className="h-3 w-3" />
+                          </Button>
                         </div>
+                        
+                        <Link href={`/genes/${gene.id}`}>
+                          <Button 
+                            size="sm" 
+                            className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            View Details
+                            <ChevronRight className="h-3 w-3 ml-1" />
+                          </Button>
+                        </Link>
                       </div>
                     </CardContent>
-                  </Link>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </div>
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </div>
 
-        {filtered.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-              <Search className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">No genes found</h3>
-            <p className="text-slate-500 mb-4">Try adjusting your search terms or filters</p>
-            <Button onClick={() => { setQuery(""); setTraitFilter("All"); }}>
-              Clear Search
-            </Button>
-          </motion.div>
-        )}
+          {filteredGenes.length === 0 && (
+            <Card className="border-slate-200 bg-white/90 backdrop-blur-sm">
+              <CardContent className="p-12 text-center">
+                <Search className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-800 mb-2">No genes found</h3>
+                <p className="text-slate-600 mb-4">
+                  Try adjusting your search query or filters to find relevant genes.
+                </p>
+                <Button 
+                  onClick={() => {
+                    setQuery("");
+                    setTraitFilter("All");
+                    setOrganismFilter("All");
+                    setSearchResults(DEMO_GENES);
+                  }}
+                  variant="outline"
+                >
+                  Clear All Filters
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </motion.div>
       </div>
     </div>
   );
 }
-
-

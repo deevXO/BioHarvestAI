@@ -1,455 +1,408 @@
 "use client";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { 
-  History, 
-  Search, 
-  Download, 
-  Dna, 
-  TrendingUp, 
-  AlertCircle, 
-  CheckCircle, 
+import { Badge } from "@/components/ui/badge";
+import {
+  Download,
+  Search,
+  BarChart3,
+  CheckCircle,
   Clock,
+  AlertCircle,
+  FileText,
+  RefreshCw,
+  TrendingUp,
+  History,
+  Dna,
   Eye,
   X,
-  BarChart3,
-  FileText,
   User,
   Calendar as CalendarIcon
 } from "lucide-react";
 
-type PredictionResult = {
-  id: string;
-  geneId: string;
-  geneName: string;
-  mutation: string;
-  trait: string;
-  prediction: "beneficial" | "neutral" | "harmful";
-  confidence: number;
-  timestamp: string;
-  status: "completed" | "processing" | "failed";
-  details: {
-    algorithm: string;
-    processingTime: string;
-    dataPoints: number;
-    researcher: string;
-    methodology: string;
-    notes: string;
-  };
-};
-
-const mockHistory: PredictionResult[] = [
-  {
-    id: "pred_001",
-    geneId: "DREB1A",
-    geneName: "Dehydration Responsive Element Binding protein 1A",
-    mutation: "A142V",
-    trait: "Drought Tolerance",
-    prediction: "beneficial",
-    confidence: 0.87,
-    timestamp: "2025-08-19T10:30:00Z",
-    status: "completed",
-    details: {
-      algorithm: "DeepProtein AI v3.2",
-      processingTime: "2.3 seconds",
-      dataPoints: 15420,
-      researcher: "Dr. Sarah Chen",
-      methodology: "Structure-based prediction with evolutionary analysis",
-      notes: "High confidence due to strong conservation patterns and favorable structural changes."
+// Import the prediction history data (this would normally come from the API)
+const PREDICTION_HISTORY = {
+  "totalPredictions": 4,
+  "predictions": [
+    {
+      "id": "pred_004",
+      "geneId": "LEA14",
+      "geneName": "Late Embryogenesis Abundant protein 14",
+      "mutation": "T167A",
+      "trait": "Drought Tolerance",
+      "prediction": "neutral",
+      "confidence": 0.65,
+      "timestamp": "2025-08-19T08:00:00Z",
+      "status": "processing",
+      "details": {
+        "algorithm": "DeepProtein AI v3.2",
+        "processingTime": "Processing...",
+        "dataPoints": 0,
+        "researcher": "Dr. James Wilson",
+        "methodology": "Comprehensive multi-factor analysis",
+        "notes": "Analysis in progress..."
+      }
+    },
+    {
+      "id": "pred_003",
+      "geneId": "DREB1A",
+      "geneName": "Dehydration Responsive Element Binding protein 1A", 
+      "mutation": "A120V",
+      "trait": "Drought Tolerance",
+      "prediction": "beneficial",
+      "confidence": 0.96,
+      "timestamp": "2025-08-18T14:30:00Z",
+      "status": "completed",
+      "details": {
+        "algorithm": "BioHarvest DeepProtein v4.2",
+        "processingTime": "1.3 seconds",
+        "dataPoints": 15247,
+        "researcher": "Dr. Sarah Chen",
+        "methodology": "Multi-modal transformer with protein folding prediction",
+        "notes": "High confidence prediction validated across multiple species"
+      }
+    },
+    {
+      "id": "pred_002", 
+      "geneId": "NHX1",
+      "geneName": "Sodium/Hydrogen Exchanger 1",
+      "mutation": "G87A",
+      "trait": "Salt Tolerance", 
+      "prediction": "beneficial",
+      "confidence": 0.92,
+      "timestamp": "2025-08-18T10:15:00Z",
+      "status": "completed",
+      "details": {
+        "algorithm": "BioHarvest DeepProtein v4.2",
+        "processingTime": "0.9 seconds",
+        "dataPoints": 12891,
+        "researcher": "Dr. Ahmed Hassan",
+        "methodology": "Structure-function analysis with molecular dynamics",
+        "notes": "Significant improvement in salt exclusion mechanism predicted"
+      }
+    },
+    {
+      "id": "pred_001",
+      "geneId": "HSP70",
+      "geneName": "Heat Shock Protein 70",
+      "mutation": "K394R", 
+      "trait": "Heat Tolerance",
+      "prediction": "beneficial",
+      "confidence": 0.78,
+      "timestamp": "2025-08-17T16:45:00Z",
+      "status": "completed",
+      "details": {
+        "algorithm": "BioHarvest DeepProtein v4.1",
+        "processingTime": "2.1 seconds",
+        "dataPoints": 8934,
+        "researcher": "Dr. Maria Rodriguez",
+        "methodology": "Thermal stability analysis",
+        "notes": "Enhanced chaperone activity under heat stress conditions"
+      }
     }
-  },
-  {
-    id: "pred_002", 
-    geneId: "NHX1",
-    geneName: "Sodium/Hydrogen Exchanger 1",
-    mutation: "L89F",
-    trait: "Salt Tolerance", 
-    prediction: "harmful",
-    confidence: 0.92,
-    timestamp: "2025-08-19T09:15:00Z",
-    status: "completed",
-    details: {
-      algorithm: "DeepProtein AI v3.2",
-      processingTime: "1.8 seconds",
-      dataPoints: 12856,
-      researcher: "Prof. Michael Zhang",
-      methodology: "Molecular dynamics simulation with machine learning",
-      notes: "Mutation disrupts critical ion transport mechanism."
-    }
-  },
-  {
-    id: "pred_003",
-    geneId: "HSP70",
-    geneName: "Heat Shock Protein 70",
-    mutation: "G45R",
-    trait: "Heat Resistance",
-    prediction: "beneficial",
-    confidence: 0.78,
-    timestamp: "2025-08-19T08:45:00Z",
-    status: "completed",
-    details: {
-      algorithm: "DeepProtein AI v3.1",
-      processingTime: "3.1 seconds",
-      dataPoints: 18920,
-      researcher: "Dr. Elena Rodriguez",
-      methodology: "Thermodynamic stability analysis",
-      notes: "Moderate confidence due to limited experimental validation."
-    }
-  },
-  {
-    id: "pred_004",
-    geneId: "LEA14",
-    geneName: "Late Embryogenesis Abundant protein 14",
-    mutation: "T167A",
-    trait: "Drought Tolerance",
-    prediction: "neutral",
-    confidence: 0.65,
-    timestamp: "2025-08-19T08:00:00Z",
-    status: "processing",
-    details: {
-      algorithm: "DeepProtein AI v3.2",
-      processingTime: "Processing...",
-      dataPoints: 0,
-      researcher: "Dr. James Wilson",
-      methodology: "Comprehensive multi-factor analysis",
-      notes: "Analysis in progress..."
-    }
-  },
-  {
-    id: "pred_005",
-    geneId: "SOS1", 
-    geneName: "Salt Overly Sensitive 1",
-    mutation: "K234E",
-    trait: "Salt Tolerance",
-    prediction: "beneficial",
-    confidence: 0.91,
-    timestamp: "2025-08-18T16:20:00Z",
-    status: "completed",
-    details: {
-      algorithm: "DeepProtein AI v3.2",
-      processingTime: "2.7 seconds",
-      dataPoints: 16789,
-      researcher: "Dr. Yuki Tanaka",
-      methodology: "Functional domain analysis with AI prediction",
-      notes: "Strong positive impact on sodium tolerance pathways."
-    }
-  },
-  {
-    id: "pred_006",
-    geneId: "RPM1",
-    geneName: "Resistance to Pseudomonas syringae pv Maculicola 1",
-    mutation: "D78N",
-    trait: "Disease Resistance",
-    prediction: "harmful",
-    confidence: 0.83,
-    timestamp: "2025-08-18T14:10:00Z",
-    status: "failed",
-    details: {
-      algorithm: "DeepProtein AI v3.1",
-      processingTime: "Failed after 45s",
-      dataPoints: 0,
-      researcher: "Dr. Amanda Foster",
-      methodology: "Failed - insufficient sequence data",
-      notes: "Analysis failed due to incomplete protein sequence information."
-    }
-  }
-];
-
-const getPredictionColor = (prediction: string) => {
-  switch (prediction) {
-    case "beneficial":
-      return { bg: "bg-green-100", text: "text-green-700", border: "border-green-300" };
-    case "harmful":
-      return { bg: "bg-red-100", text: "text-red-700", border: "border-red-300" };
-    case "neutral":
-      return { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-300" };
-    default:
-      return { bg: "bg-gray-100", text: "text-gray-700", border: "border-gray-300" };
-  }
-};
-
-const getStatusIcon = (status: string) => {
-  switch (status) {
-    case "completed":
-      return <CheckCircle className="h-4 w-4 text-green-600" />;
-    case "processing":
-      return <Clock className="h-4 w-4 text-yellow-600" />;
-    case "failed":
-      return <AlertCircle className="h-4 w-4 text-red-600" />;
-    default:
-      return <Clock className="h-4 w-4 text-gray-600" />;
-  }
+  ],
+  "exportedAt": "2025-09-19T09:20:58.425Z",
+  "exportedBy": "BioHarvest AI Platform"
 };
 
 export default function PredictionHistoryPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [selectedPrediction, setSelectedPrediction] = useState<PredictionResult | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [predictionFilter, setPredictionFilter] = useState("all");
+  const [selectedPrediction, setSelectedPrediction] = useState<typeof PREDICTION_HISTORY.predictions[0] | null>(null);
 
-  const filteredHistory = mockHistory.filter(item => {
-    const matchesSearch = item.geneId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.mutation.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.trait.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = selectedStatus === "all" || item.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  });
-
-  const exportPrediction = (prediction: PredictionResult) => {
-    const data = {
-      id: prediction.id,
-      gene: {
-        id: prediction.geneId,
-        name: prediction.geneName
-      },
-      mutation: prediction.mutation,
-      trait: prediction.trait,
-      prediction: prediction.prediction,
-      confidence: prediction.confidence,
-      timestamp: prediction.timestamp,
-      status: prediction.status,
-      details: prediction.details,
-      exportedAt: new Date().toISOString(),
-      exportedBy: "BioHarvest AI Platform"
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${prediction.geneId}_${prediction.mutation}_prediction.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <CheckCircle className="h-4 w-4 text-emerald-500" />;
+      case "processing":
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case "failed":
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
   };
 
-  const exportAllPredictions = () => {
-    const data = {
-      totalPredictions: filteredHistory.length,
-      predictions: filteredHistory,
-      exportedAt: new Date().toISOString(),
-      exportedBy: "BioHarvest AI Platform"
-    };
+  const getPredictionColor = (prediction: string) => {
+    switch (prediction) {
+      case "beneficial":
+        return "bg-emerald-100 text-emerald-800 border-emerald-200";
+      case "neutral":
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      case "detrimental":
+        return "bg-red-100 text-red-800 border-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200";
+    }
+  };
+
+  const getConfidenceColor = (confidence: number) => {
+    if (confidence >= 0.9) return "text-emerald-600";
+    if (confidence >= 0.7) return "text-yellow-600";
+    return "text-red-600";
+  };
+
+  const filteredPredictions = PREDICTION_HISTORY.predictions.filter(pred => {
+    const matchesSearch = searchQuery === "" ||
+      pred.geneName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pred.mutation.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      pred.trait.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bioharvest_prediction_history.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const matchesStatus = statusFilter === "all" || pred.status === statusFilter;
+    const matchesPrediction = predictionFilter === "all" || pred.prediction === predictionFilter;
+    
+    return matchesSearch && matchesStatus && matchesPrediction;
+  });
+
+  const exportData = () => {
+    const dataStr = JSON.stringify(PREDICTION_HISTORY, null, 2);
+    const dataBlob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "bioharvest_prediction_history.json";
+    link.click();
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-[0.02]">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d="M0,50 Q25,25 50,50 T100,50" stroke="currentColor" strokeWidth="0.5" fill="none" />
-          <path d="M0,50 Q25,75 50,50 T100,50" stroke="currentColor" strokeWidth="0.5" fill="none" />
-        </svg>
-      </div>
-
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-16">
-        {/* Hero Section */}
-        <motion.div 
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
+          transition={{ duration: 0.8 }}
+          className="mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-6">
-            <History className="h-4 w-4" />
-            Analysis History & Results
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-4">
+                <History className="h-4 w-4" />
+                Analysis History & Results
+              </div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                Prediction History
+              </h1>
+              <p className="text-slate-600 text-lg mt-2">
+                Track and analyze your genetic mutation predictions and AI insights
+              </p>
+            </div>
+            <Button
+              onClick={exportData}
+              className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Data
+            </Button>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent mb-4">
-            Prediction History
-          </h1>
-          <p className="text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto">
-            Track your genetic analysis results, review past predictions, and monitor the confidence levels of your research findings.
-          </p>
+
+          {/* Stats Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-white/80 backdrop-blur border-emerald-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Total Predictions</p>
+                    <p className="text-2xl font-bold text-emerald-600">{PREDICTION_HISTORY.totalPredictions}</p>
+                  </div>
+                  <BarChart3 className="h-8 w-8 text-emerald-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur border-emerald-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Completed</p>
+                    <p className="text-2xl font-bold text-emerald-600">
+                      {PREDICTION_HISTORY.predictions.filter(p => p.status === "completed").length}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-emerald-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur border-yellow-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Processing</p>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {PREDICTION_HISTORY.predictions.filter(p => p.status === "processing").length}
+                    </p>
+                  </div>
+                  <Clock className="h-8 w-8 text-yellow-600" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-white/80 backdrop-blur border-teal-200">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-slate-600">Beneficial</p>
+                    <p className="text-2xl font-bold text-teal-600">
+                      {PREDICTION_HISTORY.predictions.filter(p => p.prediction === "beneficial").length}
+                    </p>
+                  </div>
+                  <TrendingUp className="h-8 w-8 text-teal-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search by gene name, mutation, or trait..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-white/80 backdrop-blur border-slate-200"
+              />
+            </div>
+            
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-slate-200 rounded-lg bg-white/80 backdrop-blur text-sm"
+              title="Filter by status"
+            >
+              <option value="all">All Status</option>
+              <option value="completed">Completed</option>
+              <option value="processing">Processing</option>
+              <option value="failed">Failed</option>
+            </select>
+
+            <select
+              value={predictionFilter}
+              onChange={(e) => setPredictionFilter(e.target.value)}
+              className="px-4 py-2 border border-slate-200 rounded-lg bg-white/80 backdrop-blur text-sm"
+              title="Filter by prediction type"
+            >
+              <option value="all">All Predictions</option>
+              <option value="beneficial">Beneficial</option>
+              <option value="neutral">Neutral</option>
+              <option value="detrimental">Detrimental</option>
+            </select>
+          </div>
         </motion.div>
 
-        {/* Stats Cards */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="grid md:grid-cols-4 gap-6 mb-8"
-        >
-          {[
-            { label: "Total Predictions", value: mockHistory.length, icon: Dna, color: "emerald" },
-            { label: "Completed", value: mockHistory.filter(h => h.status === "completed").length, icon: CheckCircle, color: "green" },
-            { label: "Avg Confidence", value: `${Math.round(mockHistory.reduce((acc, h) => acc + h.confidence, 0) / mockHistory.length * 100)}%`, icon: TrendingUp, color: "blue" },
-            { label: "Processing", value: mockHistory.filter(h => h.status === "processing").length, icon: Clock, color: "yellow" }
-          ].map((stat, index) => (
+        {/* Predictions List */}
+        <div className="space-y-4">
+          {filteredPredictions.map((prediction, index) => (
             <motion.div
-              key={stat.label}
+              key={prediction.id}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 + index * 0.1 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="border-slate-200 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-shadow">
+              <Card className="bg-white/80 backdrop-blur border-slate-200 hover:shadow-lg transition-all">
                 <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-slate-600 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold text-slate-800">{stat.value}</p>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center space-x-3">
+                      {getStatusIcon(prediction.status)}
+                      <div>
+                        <h3 className="font-semibold text-slate-800">
+                          {prediction.geneName}
+                        </h3>
+                        <p className="text-sm text-slate-600">
+                          {prediction.geneId} • {prediction.mutation}
+                        </p>
+                      </div>
                     </div>
-                    <div className="h-12 w-12 rounded-lg bg-emerald-100 flex items-center justify-center">
-                      <stat.icon className="h-6 w-6 text-emerald-600" />
+                    
+                    <div className="flex items-center space-x-3">
+                      <Badge className={getPredictionColor(prediction.prediction)} variant="outline">
+                        {prediction.prediction}
+                      </Badge>
+                      <div className="text-right">
+                        <p className={`text-sm font-semibold ${getConfidenceColor(prediction.confidence)}`}>
+                          {Math.round(prediction.confidence * 100)}% confidence
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(prediction.timestamp).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSelectedPrediction(prediction)}
+                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-xs font-medium text-slate-600 mb-1">Target Trait</p>
+                      <p className="text-sm text-slate-800">{prediction.trait}</p>
+                    </div>
+                    
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-xs font-medium text-slate-600 mb-1">Algorithm</p>
+                      <p className="text-sm text-slate-800">{prediction.details.algorithm}</p>
+                    </div>
+                    
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-xs font-medium text-slate-600 mb-1">Researcher</p>
+                      <p className="text-sm text-slate-800">{prediction.details.researcher}</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-50 rounded-lg p-3 mb-4">
+                    <p className="text-xs font-medium text-slate-600 mb-1">Analysis Notes</p>
+                    <p className="text-sm text-slate-700">{prediction.details.notes}</p>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Processing Time: {prediction.details.processingTime}</span>
+                    <span>Data Points: {prediction.details.dataPoints.toLocaleString()}</span>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* Filters */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="mb-8"
-        >
-          <Card className="border-slate-200 bg-white/90 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative flex-1 max-w-md">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    placeholder="Search by gene, mutation, or trait..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 border-slate-300 focus:border-emerald-500"
-                  />
-                </div>
-                <div className="flex items-center gap-3">
-                  <select
-                    value={selectedStatus}
-                    onChange={(e) => setSelectedStatus(e.target.value)}
-                    className="px-3 py-2 border border-slate-300 rounded-md focus:border-emerald-500 focus:outline-none"
-                    title="Filter by status"
-                  >
-                    <option value="all">All Status</option>
-                    <option value="completed">Completed</option>
-                    <option value="processing">Processing</option>
-                    <option value="failed">Failed</option>
-                  </select>
-                  <Button 
-                    onClick={exportAllPredictions}
-                    variant="outline" 
-                    className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Export All
-                  </Button>
-                </div>
-              </div>
+        {filteredPredictions.length === 0 && (
+          <Card className="bg-white/80 backdrop-blur border-slate-200">
+            <CardContent className="p-12 text-center">
+              <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">No predictions found</h3>
+              <p className="text-slate-600">
+                Try adjusting your search query or filters to find relevant predictions.
+              </p>
             </CardContent>
           </Card>
-        </motion.div>
-
-        {/* Predictions List */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="space-y-4"
-        >
-          {filteredHistory.map((prediction, index) => {
-            const predictionStyle = getPredictionColor(prediction.prediction);
-            return (
-              <motion.div
-                key={prediction.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-              >
-                <Card className="border-slate-200 bg-white/90 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                          <Dna className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-lg font-semibold text-slate-800">{prediction.geneId}</h3>
-                            <Badge variant="outline" className="font-mono text-xs">
-                              {prediction.mutation}
-                            </Badge>
-                            {getStatusIcon(prediction.status)}
-                          </div>
-                          <p className="text-sm text-slate-600">{prediction.geneName}</p>
-                          <p className="text-sm text-slate-500">{prediction.trait}</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className="text-center">
-                          <Badge className={`${predictionStyle.bg} ${predictionStyle.text} ${predictionStyle.border} font-medium`}>
-                            {prediction.prediction}
-                          </Badge>
-                          <p className="text-xs text-slate-500 mt-1">{Math.round(prediction.confidence * 100)}% confidence</p>
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className="text-sm text-slate-600">{new Date(prediction.timestamp).toLocaleDateString()}</p>
-                          <p className="text-xs text-slate-500">{new Date(prediction.timestamp).toLocaleTimeString()}</p>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSelectedPrediction(prediction)}
-                            className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            View Details
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => exportPrediction(prediction)}
-                            className="border-slate-300 hover:bg-slate-50"
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        {filteredHistory.length === 0 && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center py-16"
-          >
-            <div className="h-16 w-16 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-4">
-              <Search className="h-8 w-8 text-slate-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-slate-700 mb-2">No predictions found</h3>
-            <p className="text-slate-500 mb-4">Try adjusting your search terms or filters</p>
-            <Button onClick={() => { setSearchTerm(""); setSelectedStatus("all"); }}>
-              Clear Filters
-            </Button>
-          </motion.div>
         )}
+
+        {/* Export Info */}
+        <Card className="mt-8 bg-emerald-50 border-emerald-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-emerald-800">
+                  Data exported on {new Date(PREDICTION_HISTORY.exportedAt).toLocaleDateString()}
+                </p>
+                <p className="text-xs text-emerald-600">
+                  Generated by {PREDICTION_HISTORY.exportedBy}
+                </p>
+              </div>
+              <RefreshCw className="h-4 w-4 text-emerald-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Details Modal */}
@@ -502,7 +455,7 @@ export default function PredictionHistoryPage() {
                   <div className="bg-slate-50 rounded-lg p-4 space-y-2">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">Prediction:</span>
-                      <Badge className={`${getPredictionColor(selectedPrediction.prediction).bg} ${getPredictionColor(selectedPrediction.prediction).text}`}>
+                      <Badge className={getPredictionColor(selectedPrediction.prediction)}>
                         {selectedPrediction.prediction}
                       </Badge>
                     </div>
@@ -516,32 +469,19 @@ export default function PredictionHistoryPage() {
                 </div>
               </div>
 
-              {/* Technical Details */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-emerald-600" />
-                  <h3 className="font-semibold text-slate-800">Technical Details</h3>
-                </div>
-                <div className="bg-slate-50 rounded-lg p-4 space-y-2">
-                  <div><span className="font-medium">Algorithm:</span> {selectedPrediction.details.algorithm}</div>
-                  <div><span className="font-medium">Processing Time:</span> {selectedPrediction.details.processingTime}</div>
-                  <div><span className="font-medium">Data Points:</span> {selectedPrediction.details.dataPoints.toLocaleString()}</div>
-                  <div><span className="font-medium">Methodology:</span> {selectedPrediction.details.methodology}</div>
-                </div>
-              </div>
-
-              {/* Research Info */}
+              {/* Analysis Details */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <User className="h-5 w-5 text-emerald-600" />
-                  <h3 className="font-semibold text-slate-800">Research Information</h3>
+                  <h3 className="font-semibold text-slate-800">Analysis Details</h3>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-4 space-y-2">
+                <div className="bg-slate-50 rounded-lg p-4 space-y-3">
+                  <div><span className="font-medium">Algorithm:</span> {selectedPrediction.details.algorithm}</div>
                   <div><span className="font-medium">Researcher:</span> {selectedPrediction.details.researcher}</div>
+                  <div><span className="font-medium">Methodology:</span> {selectedPrediction.details.methodology}</div>
                   <div className="flex items-center gap-2">
                     <CalendarIcon className="h-4 w-4 text-slate-500" />
-                    <span className="font-medium">Date:</span> 
-                    {new Date(selectedPrediction.timestamp).toLocaleDateString()} at {new Date(selectedPrediction.timestamp).toLocaleTimeString()}
+                    <span>{new Date(selectedPrediction.timestamp).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -550,26 +490,8 @@ export default function PredictionHistoryPage() {
               <div className="space-y-3">
                 <h3 className="font-semibold text-slate-800">Analysis Notes</h3>
                 <div className="bg-slate-50 rounded-lg p-4">
-                  <p className="text-slate-700 leading-relaxed">{selectedPrediction.details.notes}</p>
+                  <p className="text-slate-700">{selectedPrediction.details.notes}</p>
                 </div>
-              </div>
-
-              {/* Actions */}
-              <div className="flex items-center gap-3 pt-4 border-t border-slate-200">
-                <Button 
-                  onClick={() => exportPrediction(selectedPrediction)}
-                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Export Details
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedPrediction(null)}
-                  className="border-slate-300 hover:bg-slate-50"
-                >
-                  Close
-                </Button>
               </div>
             </div>
           </motion.div>
