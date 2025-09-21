@@ -1,90 +1,101 @@
-# 🌾 BioHarvest AI
+# BioHarvest AI
 
-**AI-Powered Precision Harvesting: Smart, Efficient, Sustainable.**
-
----
-
-## 📑 Table of Contents
-
-1. [Introduction](#-introduction)  
-2. [Features](#-features)  
-3. [Architecture Overview](#-architecture-overview)  
-4. [Getting Started](#-getting-started)  
-   - [Prerequisites](#41-prerequisites)  
-   - [Installation](#42-installation)  
-   - [Configuration](#43-configuration)  
-   - [Running the Application](#44-running-the-application)  
-5. [Usage](#-usage)  
-6. [Related Projects](#-related-projects)  
-7. [Technologies Used](#-technologies-used)  
-8. [Contributing](#-contributing)  
-9. [License](#-license)  
-10. [Contact](#-contact)  
+**Generative AI for Climate-Resilient Crops: Design, Predict, Impact.**
 
 ---
 
-## 🚀 Introduction
+## Table of Contents
 
-**BoHarvest AI** is an advanced Artificial Intelligence system designed to revolutionize agricultural harvesting. It leverages **computer vision, machine learning, and sensor fusion** to provide:
-
-- Precision harvesting guidance  
-- Real-time yield prediction  
-- Optimized resource management  
-
-Our mission is simple: **increase harvest efficiency, reduce crop waste, and empower farmers with data-driven insights** for a more sustainable and productive future.
-
-This repository contains the **main frontend application** and orchestration logic for BoHarvest AI.  
-👉 The **core AI backend services** are maintained in a [separate repository](#-related-projects).
-
-![Dashboard Preview](assets/boharvest_dashboard.png)
-
----
-
-## ✨ Features
-
-- 🌱 **Intelligent Crop Monitoring** – Automated crop health, ripeness, and density detection.  
-- 🛠️ **Precision Harvest Guidance** – Optimized paths for manual or robotic harvesting.  
-- 📊 **Real-time Yield Prediction** – Forecast harvest volumes with environmental awareness.  
-- ⚡ **Resource Optimization** – Efficient allocation of labor, machinery, and time.  
-- 📈 **Intuitive Web Dashboard** – Monitor progress, view analytics, and adjust parameters.  
-- 🔗 **Scalable Architecture** – Works with different farm sizes and crop types.  
+- 1. [Introduction](#1-introduction)
+- 2. [Vision & Problem Solved](#2-vision--problem-solved)
+- 3. [Features](#3-features)
+- 4. [Architecture Overview](#4-architecture-overview)
+- 5. [Getting Started (Frontend)](#5-getting-started-frontend)  
+  - 5.1 [Prerequisites](#51-prerequisites)  
+  - 5.2 [Installation](#52-installation)  
+  - 5.3 [Configuration](#53-configuration)  
+  - 5.4 [Running the Application](#54-running-the-application)  
+- 6. [Usage](#6-usage)
+- 7. [Related Projects (Backend)](#7-related-projects-backend)
+- 8. [Technologies Used](#8-technologies-used)
+- 9. [Contributing](#9-contributing)
+- 10. [License](#10-license)
+- 11. [Contact](#11-contact)
+- 12. [Team](#12-team)
 
 ---
 
-## 🏗 Architecture Overview
+## 1. Introduction
 
-BoHarvest AI follows a **modular, distributed architecture** with three core layers:
+BioHarvest AI is a groundbreaking Generative AI platform designed to revolutionize sustainable agriculture. We empower plant scientists and breeders to combat climate change by accelerating the creation of resilient and resource-efficient crop varieties.
 
-1. **Frontend (This Repository):**  
-   Interactive web dashboard + client-side logic.  
-   
-2. **Backend AI & Services (Separate Repository):**  
-   Python-based server hosting AI models (CV, yield prediction), APIs, and data processing.  
-
-3. **Edge Devices/Sensors (Optional):**  
-   Drones, sensors, or robotic harvesters feeding real-time data to the backend.  
-
-![System Architecture](assets/architecture_diagram.png)
+This repository contains the **main frontend application and orchestration logic** for BioHarvest AI.  
+The core AI processing and backend services are hosted in a separate repository.
 
 ---
 
-## ⚙️ Getting Started
+## 2. Vision & Problem Solved
 
-Follow these steps to set up the **frontend application** locally.
+**Our Vision:**  
+To be the world's leading Generative AI Platform for Sustainable Crop Design, transforming traditional agriculture into a rapid, proactive, and scientifically guided engineering discipline.
 
-### 4.1 Prerequisites
+**Problems BioHarvest AI Solves:**
 
-- [Node.js](https://nodejs.org/) (LTS v18.x or v20.x recommended)  
+1. **Climate Crisis Impact:** Rapid climate shifts (droughts, floods, heat, new pests) devastate global crop yields, leading to food insecurity and environmental degradation.  
+2. **Slow Adaptation:** Traditional crop breeding takes 10–15+ years, critically insufficient for rapid climate adaptation.  
+3. **Fragmented Genetic Design:** Existing tools are disconnected, relying on guesswork rather than integrated, AI-driven solutions for proactive mutation design and validation.  
+
+BioHarvest AI addresses these by providing an integrated, AI-driven solution that accelerates genetic adaptation, ensuring stable food supplies and a healthier environment for all.
+
+📌 *Caption:* BioHarvest AI's integrated **'Gene-to-Lab' workflow**:  
+**Discover → Design → Predict → Validate → Plan Experiment**
+
+---
+
+## 3. Features
+
+- **Generative Mutation Optimization:** AI proactively designs novel, optimal genetic mutations for specific climate-resilience traits.  
+- **Holistic Multi-Trait Impact Analysis:** Predicts complex effects and crucial trade-offs across multiple sustainability metrics (e.g., drought tolerance, water use efficiency, carbon sequestration).  
+- **Cognitive Explanation (XAI Core):** Provides mechanistic reasoning for AI predictions, linked to scientific principles and literature for enhanced trust.  
+- **Interactive Bio-Visualizers:** Real-time sequence highlighting, dynamic 3D protein structure visualization, and pathway mapping.  
+- **Cross-Species Transfer Predictor:** Estimates the likelihood of beneficial mutations being effective in other crop species.  
+- **(Future) In-Silico Lab Assistant:** AI-guided CRISPR design, automated experimental protocols, and resource optimization.  
+- **Intuitive "Cognitive Bio-Interface":** A user-friendly web dashboard for seamless interaction with complex genetic data and AI.  
+
+---
+
+## 4. Architecture Overview
+
+BioHarvest AI operates on a **modular, distributed architecture**. This repository primarily houses the **Frontend/Client-side application**.
+
+**System Components:**
+
+1. **Frontend (This Repository):** Interactive web dashboard and client-side logic built with Next.js, React, TypeScript.  
+2. **Backend AI & Services (Separate Repo):** Python-based FastAPI server hosting core AI models (LLMs), processing genetic data, and providing API endpoints.  
+3. **External Data Sources (Optional):** Public biological databases (UniProt, NCBI, PDB) and potentially real-time sensor data (future scope).  
+
+📌 *Caption:* High-level overview of BioHarvest AI's **distributed architecture**, powered by **LLMs + GPU compute**.
+
+---
+
+## 5. Getting Started (Frontend)
+
+These instructions will help you set up and run the **BioHarvest AI frontend** on your local machine.  
+You must also have the **backend services running** (see BioHarvest AI Backend repo).
+
+### 5.1 Prerequisites
+
+- Node.js (LTS: 18.x or 20.x)  
 - npm (comes with Node.js) or yarn  
 - Git  
-- Running **BoHarvest AI Backend** services ([see here](#-related-projects))  
+- Running BioHarvest AI Backend services  
 
-### 4.2 Installation
+### 5.2 Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/deevXO/boharvest-ai-frontend.git
-cd boharvest-ai-frontend
+git clone https://github.com/deevXO/BioHarvestAI.git
+cd BioHarvestAI
 
 # Install dependencies
 npm install
@@ -92,98 +103,131 @@ npm install
 yarn install
 ````
 
-### 4.3 Configuration
+### 5.3 Configuration
 
-Create a `.env.local` file in the root directory:
+The frontend needs to know where your backend services are running.
 
-```env
-# .env.local
-NEXT_PUBLIC_BACKEND_API_URL=http://localhost:8000/api
-# Or deployed backend URL, e.g.:
-# NEXT_PUBLIC_BACKEND_API_URL=https://api.boharvest.ai/api
-```
-
-### 4.4 Running the Application
+1. Create a `.env.local` file in the root directory:
 
 ```bash
-# Start the dev server
+# .env.local
+NEXT_PUBLIC_BACKEND_API_URL=http://localhost:8000/api
+# Or your deployed backend URL, e.g. https://api.bioharvest.ai/api
+```
+
+Make sure `NEXT_PUBLIC_BACKEND_API_URL` points to the backend service.
+
+### 5.4 Running the Application
+
+```bash
+# Start the frontend dev server
 npm run dev
 # or
 yarn dev
 ```
 
-Open: **[http://localhost:3000](http://localhost:3000)**
+Then open: **[http://localhost:3000](http://localhost:3000)**
 
 ---
 
-## 📊 Usage
+## 6. Usage
 
-Once running, you can:
+Once connected to the backend, you can:
 
-* **Monitor Fields:** View real-time data on crop health, ripeness, and yield.
-* **Harvest Recommendations:** Get AI-driven harvesting time & route suggestions.
-* **Predict Yields:** Access forecasts for better planning.
-* **Review Analytics:** Analyze historical and real-time performance data.
-
----
-
-## 🔗 Related Projects
-
-* **BoHarvest AI Backend**
-  Repo: [deevXO/boharvest-ai-backend](https://github.com/deevXO/boharvest-ai-backend)
-
-  * Core Python-based AI models (CV, ML, prediction).
-  * FastAPI endpoints for frontend communication.
-  * Setup instructions in its README.
+* 🔍 **Explore Crop Genes:** Search and filter a gene library for climate resilience.
+* 🧬 **Design Mutations:** Input or auto-generate optimal mutation candidates.
+* 📊 **Predict Impact:** Get AI-powered predictions across sustainability traits.
+* 📖 **Validate Insights:** Review mechanistic explanations, compare variants, assess cross-species transferability.
+* 🧪 **(Future) Plan Experiments:** Generate AI-guided CRISPR designs and experimental protocols.
 
 ---
 
-## 🛠 Technologies Used
+## 7. Related Projects (Backend)
+
+This project relies on the **BioHarvest AI Backend**:
+
+* **Repository:** [BioHarvest AI Backend](https://github.com/deevXO/bioharvest-ai-backend)
+* **Description:** Python-based AI processing logic (Protein LLMs, FastAPI endpoints, GPU deployment).
+* **Setup:** See backend README for instructions.
+
+---
+
+## 8. Technologies Used
 
 ### Frontend
 
-* [Next.js](https://nextjs.org/) (React Framework)
-* [React.js](https://react.dev/)
-* [TypeScript](https://www.typescriptlang.org/)
-* [Tailwind CSS](https://tailwindcss.com/)
-* [Chart.js](https://www.chartjs.org/) / [D3.js](https://d3js.org/)
+* Next.js, React, TypeScript
+* Tailwind CSS, Shadcn UI
+* D3.js / Recharts (data visualizations)
+* Zustand, React Query
 
-### Backend (separate project)
+### Backend (separate repo)
 
-* [Python](https://www.python.org/)
-* [FastAPI](https://fastapi.tiangolo.com/)
-* [PyTorch](https://pytorch.org/) / [TensorFlow](https://www.tensorflow.org/)
-* [OpenCV](https://opencv.org/)
+* Python, FastAPI
+* PyTorch / TensorFlow (LLM inference)
+* Biopython (sequence handling)
+
+### AI Models
+
+* ESM-2 / Evo2 (Protein LLMs)
 
 ### Deployment
 
-* [Vercel](https://vercel.com/) (frontend hosting)
-* Docker / Kubernetes (backend orchestration, optional Modal.com)
+* **Frontend:** Vercel
+* **Backend:** Modal.com (NVIDIA H100/A100 GPUs)
+
+### Tools
+
+* Git
 
 ---
 
-## 🤝 Contributing
+## 9. Contributing
 
-We welcome contributions! 🚀
+We welcome contributions!
 
-* Frontend contributions → See `CONTRIBUTING.md` in this repo.
-* Backend contributions → See `CONTRIBUTING.md` in [boharvest-ai-backend](https://github.com/deevXO/boharvest-ai-backend).
+* **Frontend contributions:** See `CONTRIBUTING.md` in this repo.
+* **Backend contributions:** See `CONTRIBUTING.md` in the backend repo.
 
-Please follow our coding standards and commit guidelines.
-
----
-
-## 📜 License
-
-This project is licensed under the **MIT License** – see the [LICENSE](LICENSE) file for details.
+Follow our coding standards and commit guidelines.
 
 ---
 
-## 📬 Contact
+## 10. License
 
-* **Name:** Deevanshu Kapoor
-* **Email:** [deevanshukapoor010206@gmail.com](mailto:deevanshukapoor010206@gmail.com)
-* **GitHub:** [@deevXO](https://github.com/deevXO)
-* **Project Org/User:** [github.com/deevXO](https://github.com/deevXO)
+This project is licensed under the **MIT License** – see the [LICENSE](./LICENSE) file.
 
 ---
+
+## 11. Contact
+
+📩 **Deevanshu Kapoor**
+
+* Email: [deevanshukapoor010206@gmail.com](mailto:deevanshukapoor010206@gmail.com)
+* GitHub: [@deevXO](https://github.com/deevXO)
+* Org/User: [deevXO GitHub](https://github.com/deevXO)
+
+---
+
+## 12. Team
+
+* **Siya Chopra** – Team Lead
+* **Deevanshu Kapoor** – Frontend Engineer
+* **Mihika** – AI/Backend Architect
+* **Manas Arora** – Bioinformatics & Data Strategist
+* **Suhail Khan** – Project Coordinator
+
+---
+
+## Final Checklist
+
+* ✅ Repo name: `deevXO/BioHarvestAI`
+* ✅ Backend repo: `deevXO/bioharvest-ai-backend`
+* ✅ Add assets:
+
+  * `assets/bioharvest_workflow.png`
+  * `assets/architecture_diagram.png`
+  * `assets/bioharvest_dashboard.png` (screenshot recommended)
+* ✅ LICENSE file included
+
+🚀 **This README is now polished, repo-ready, and presentation-grade.**
