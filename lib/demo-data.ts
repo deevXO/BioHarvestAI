@@ -58,32 +58,36 @@ export const DEMO_GENES: DemoGene[] = [
     id: "DREB1A",
     name: "DREB1A",
     scientificName: "Dehydration-responsive element-binding protein 1A",
-    description: "Master regulator of drought stress response in plants. Controls expression of over 200 stress-responsive genes.",
+    description: "Master regulator of drought stress response in plants. Controls expression of over 200 stress-responsive genes through DRE/CRT element binding. Shows remarkable enhancement potential across multiple stress tolerance traits.",
     sequence: "ATGGATAAGGCCGACAAGCGCACGTCCGACAAGAAGAAGAAGGACGAGGAGTTCGACGAGGAGGGCGGCAAGGAGAAGAAGGCCGACGACGAGGCCGAGAAGAAGGCCAAGCGCGAGGCCGACAAGCGCACGTCCGACAAGAAGAAGAAGGACGAGGAGTTCGACGAGGAGGGCGGCAAGGAGAAGAAG",
     organism: "Arabidopsis thaliana",
-    traits: ["Drought Tolerance", "Cold Tolerance", "Salt Tolerance"],
-    confidence: 0.94,
-    applications: ["Rice", "Wheat", "Maize", "Soybean"],
+    traits: ["Drought Tolerance", "Cold Tolerance", "Salt Tolerance", "Heat Tolerance", "Osmotic Adjustment"],
+    confidence: 0.95,
+    applications: ["Rice", "Wheat", "Maize", "Soybean", "Cotton", "Barley"],
     mutationHotspots: [
-      { position: 120, originalAA: "A", suggestedAA: "V", impact: "Enhanced DNA binding affinity" },
-      { position: 158, originalAA: "L", suggestedAA: "F", impact: "Improved protein stability" },
-      { position: 203, originalAA: "K", suggestedAA: "R", impact: "Better transcriptional activation" }
+      { position: 120, originalAA: "A", suggestedAA: "V", impact: "Enhanced DNA binding affinity (+34%)" },
+      { position: 158, originalAA: "L", suggestedAA: "F", impact: "Improved thermostability and heat tolerance" },
+      { position: 203, originalAA: "R", suggestedAA: "K", impact: "Better transcriptional activation under stress" },
+      { position: 89, originalAA: "S", suggestedAA: "T", impact: "Enhanced ABA-responsive phosphorylation" },
+      { position: 45, originalAA: "K", suggestedAA: "R", impact: "Improved nuclear localization efficiency" }
     ]
   },
   {
     id: "NHX1",
     name: "NHX1", 
     scientificName: "Sodium/hydrogen exchanger 1",
-    description: "Key sodium tolerance gene that regulates Na+/H+ homeostasis in plant cells under salt stress conditions.",
-    sequence: "ATGAGCGAGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTG",
+    description: "Key vacuolar Na+/H+ antiporter that regulates ionic homeostasis in plant cells under salt stress. Essential for salt tolerance and osmotic adjustment, with significant potential for engineering salt-resistant crops.",
+    sequence: "ATGAGCGAGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTG",
     organism: "Arabidopsis thaliana",
-    traits: ["Salt Tolerance", "Ion Homeostasis", "Osmotic Balance"],
+    traits: ["Salt Tolerance", "Ion Homeostasis", "Osmotic Balance", "pH Regulation", "Drought Tolerance"],
     confidence: 0.91,
-    applications: ["Rice", "Tomato", "Barley", "Cotton"],
+    applications: ["Rice", "Tomato", "Barley", "Cotton", "Quinoa", "Sugar Beet"],
     mutationHotspots: [
-      { position: 87, originalAA: "G", suggestedAA: "A", impact: "Enhanced salt exclusion" },
-      { position: 142, originalAA: "V", suggestedAA: "I", impact: "Improved membrane stability" },
-      { position: 276, originalAA: "S", suggestedAA: "T", impact: "Better ion selectivity" }
+      { position: 87, originalAA: "G", suggestedAA: "A", impact: "Enhanced salt exclusion mechanisms (+67% reduction in Na+ accumulation)" },
+      { position: 142, originalAA: "V", suggestedAA: "I", impact: "Improved membrane stability and ion selectivity" },
+      { position: 276, originalAA: "S", suggestedAA: "T", impact: "Better Na+/K+ discrimination and transport efficiency" },
+      { position: 203, originalAA: "A", suggestedAA: "V", impact: "Increased protein rigidity under extreme salinity" },
+      { position: 156, originalAA: "F", suggestedAA: "Y", impact: "Enhanced aromatic stacking and transmembrane stability" }
     ]
   },
   {
@@ -131,6 +135,56 @@ export const DEMO_MUTATIONS: DemoMutation[] = [
     }
   },
   {
+    id: "DREB1A_L158F",
+    geneId: "DREB1A",
+    position: 158,
+    originalAA: "L",
+    mutatedAA: "F", 
+    mutation: "L158F",
+    prediction: "beneficial",
+    confidence: 0.91,
+    traits: {
+      droughtTolerance: 79,
+      saltTolerance: 65,
+      heatResistance: 88,
+      yieldPotential: 72,
+      nutritionalValue: 48,
+      diseaseResistance: 58
+    },
+    xaiExplanation: "The L158F mutation improves protein thermostability by introducing aromatic stacking interactions that stabilize the AP2/ERF domain structure. This enhances heat tolerance while maintaining drought response functionality, making it particularly valuable for crops facing combined heat-drought stress scenarios.",
+    validationData: {
+      labTested: true,
+      fieldTested: false,
+      crossSpecies: ["Rice", "Wheat"],
+      citations: 89
+    }
+  },
+  {
+    id: "DREB1A_R203K",
+    geneId: "DREB1A",
+    position: 203,
+    originalAA: "R",
+    mutatedAA: "K", 
+    mutation: "R203K",
+    prediction: "beneficial",
+    confidence: 0.83,
+    traits: {
+      droughtTolerance: 92,
+      saltTolerance: 71,
+      heatResistance: 55,
+      yieldPotential: 81,
+      nutritionalValue: 42,
+      diseaseResistance: 49
+    },
+    xaiExplanation: "The R203K mutation optimizes the transcriptional activation domain by fine-tuning electrostatic interactions with co-activator proteins. This leads to enhanced recruitment of the transcriptional machinery and improved expression of drought-responsive genes under stress conditions.",
+    validationData: {
+      labTested: true,
+      fieldTested: true,
+      crossSpecies: ["Rice", "Wheat", "Maize", "Soybean"],
+      citations: 156
+    }
+  },
+  {
     id: "NHX1_G87A",
     geneId: "NHX1",
     position: 87,
@@ -150,9 +204,59 @@ export const DEMO_MUTATIONS: DemoMutation[] = [
     xaiExplanation: "The G87A mutation significantly improves salt exclusion mechanisms by altering the selectivity filter of the Na+/H+ exchanger. This reduces cytotoxic sodium accumulation by 67% while maintaining essential potassium levels. The alanine substitution stabilizes the transmembrane domain, enabling sustained function even at 200mM NaCl concentrations that would typically cause cellular damage.",
     validationData: {
       labTested: true,
+      fieldTested: true,
+      crossSpecies: ["Rice", "Wheat", "Barley"],
+      citations: 142
+    }
+  },
+  {
+    id: "NHX1_V142I",
+    geneId: "NHX1",
+    position: 142,
+    originalAA: "V",
+    mutatedAA: "I",
+    mutation: "V142I",
+    prediction: "beneficial", 
+    confidence: 0.84,
+    traits: {
+      droughtTolerance: 52,
+      saltTolerance: 87,
+      heatResistance: 41,
+      yieldPotential: 69,
+      nutritionalValue: 44,
+      diseaseResistance: 32
+    },
+    xaiExplanation: "The V142I mutation enhances membrane stability and improves ion selectivity under high salinity conditions. The isoleucine substitution creates a more hydrophobic environment that stabilizes the protein in the lipid bilayer, leading to improved Na+/H+ exchange efficiency and better salt tolerance.",
+    validationData: {
+      labTested: true,
       fieldTested: false,
-      crossSpecies: ["Rice", "Barley"],
-      citations: 89
+      crossSpecies: ["Tomato", "Barley"],
+      citations: 78
+    }
+  },
+  {
+    id: "NHX1_S276T",
+    geneId: "NHX1",
+    position: 276,
+    originalAA: "S",
+    mutatedAA: "T",
+    mutation: "S276T",
+    prediction: "beneficial", 
+    confidence: 0.79,
+    traits: {
+      droughtTolerance: 48,
+      saltTolerance: 83,
+      heatResistance: 44,
+      yieldPotential: 65,
+      nutritionalValue: 39,
+      diseaseResistance: 35
+    },
+    xaiExplanation: "The S276T mutation improves ion selectivity through optimized transmembrane domain structure. The threonine substitution provides better hydrogen bonding patterns that enhance the discrimination between Na+ and K+ ions, leading to more efficient salt exclusion.",
+    validationData: {
+      labTested: true,
+      fieldTested: false,
+      crossSpecies: ["Cotton", "Rice"],
+      citations: 64
     }
   },
   {

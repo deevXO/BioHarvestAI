@@ -14,6 +14,8 @@ const b612mono = B612_Mono({ subsets: ["latin"], weight: ["400","700"], variable
 export const metadata: Metadata = {
   title: "BioHarvest AI",
   description: "Accelerate climate-resilient crops with AI",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
+  themeColor: "#10b981",
 };
 
 export default function RootLayout({
@@ -23,6 +25,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="theme-color" content="#10b981" />
+        <script src="https://3Dmol.org/build/3Dmol-min.js" async></script>
+      </head>
       <body className={`${alexandria.variable} ${artifika.variable} ${b612mono.variable} font-sans antialiased bg-white text-slate-900 min-h-screen`}>
         <AuthProvider>
           <TooltipProvider>

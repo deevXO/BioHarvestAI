@@ -16,17 +16,40 @@ import {
   BarChart3,
   Database,
   Star,
-  Clock,
-  Loader2
+  Clock
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GENE_DATABASE } from "@/lib/demo-data";
 import { simulateGeneSearch } from "@/lib/ai-service";
 
+// Type definitions
+interface Gene {
+  id: string;
+  name: string;
+  fullName?: string;
+  scientificName?: string;
+  organism: string;
+  description: string;
+  traits: string[];
+  confidence: number;
+  proteinFamily?: string;
+  integratedScore?: number;
+  citations?: number;
+  keyFeatures?: string[];
+  trait?: string;
+  externalLinks?: {
+    uniprot?: string;
+    ncbi?: string;
+    pfam?: string;
+  };
+  tags?: string[];
+  recentUpdates?: string;
+}
+
 // Advanced gene database with comprehensive information - replaced with GENE_DATABASE from demo-data
 
 // Gene Card Component  
-const GeneCard = ({ gene }: { gene: any }) => {
+const GeneCard = ({ gene }: { gene: Gene }) => {
   const traitColors: Record<string, string> = {
     "Drought Tolerance": "emerald",
     "Salt Tolerance": "blue", 
@@ -36,7 +59,7 @@ const GeneCard = ({ gene }: { gene: any }) => {
     "Photosynthetic Efficiency": "green"
   };
 
-  const color = traitColors[gene.trait] || "slate";
+  const color = traitColors[gene.trait || ""] || "slate";
 
   return (
     <motion.div
@@ -81,7 +104,7 @@ const GeneCard = ({ gene }: { gene: any }) => {
             
             <div className="space-y-3">
               <div className="flex flex-wrap gap-1">
-                {gene.keyFeatures.map((feature, idx) => (
+                {gene.keyFeatures?.map((feature: string, idx: number) => (
                   <span key={idx} className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-full">
                     {feature}
                   </span>
@@ -101,7 +124,7 @@ const GeneCard = ({ gene }: { gene: any }) => {
                 </div>
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  Updated {new Date(gene.recentUpdates).toLocaleDateString()}
+                  Updated {gene.recentUpdates ? new Date(gene.recentUpdates).toLocaleDateString() : 'N/A'}
                 </span>
               </div>
             </div>
@@ -168,7 +191,7 @@ const AdvancedSearchBar = ({
           </div>
           
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium">Target Trait</Label>
               <Select value={filters.trait} onValueChange={(value) => setFilters({...filters, trait: value})}>
@@ -261,7 +284,6 @@ const AdvancedSearchBar = ({
 export default function GenomicResearchHub() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(GENE_DATABASE);
-  const [isSearching, setIsSearching] = useState(false);
   const [filters, setFilters] = useState({
     trait: "all",
     organism: "all",
@@ -278,8 +300,6 @@ export default function GenomicResearchHub() {
         setSearchResults(GENE_DATABASE);
         return;
       }
-
-      setIsSearching(true);
       
       try {
         const results = await simulateGeneSearch(searchQuery, filters);
@@ -288,8 +308,6 @@ export default function GenomicResearchHub() {
         console.error("Search failed:", error);
         setSearchResults(GENE_DATABASE);
       }
-      
-      setIsSearching(false);
     };
 
     const debounceTimer = setTimeout(performSearch, 300);
@@ -337,7 +355,7 @@ export default function GenomicResearchHub() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-teal-50">
       {/* Header */}
       <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white">
-        <div className="container mx-auto px-6 py-16">
+        <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -349,14 +367,14 @@ export default function GenomicResearchHub() {
               <span className="font-medium">Genomic Research Hub</span>
             </div>
             
-            <h1 className="text-5xl lg:text-6xl font-bold">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold">
               Discover Genetic Solutions
-              <span className="block text-3xl lg:text-4xl font-light text-emerald-200 mt-2">
+              <span className="block text-2xl sm:text-3xl lg:text-4xl font-light text-emerald-200 mt-2">
                 for Climate Resilience
               </span>
             </h1>
             
-            <p className="text-xl text-emerald-100 max-w-3xl mx-auto">
+            <p className="text-lg sm:text-xl text-emerald-100 max-w-3xl mx-auto px-4 sm:px-0">
               Explore our comprehensive database of climate-adaptive genes with AI-powered insights, 
               cross-species analysis, and integrated research data.
             </p>
@@ -365,7 +383,7 @@ export default function GenomicResearchHub() {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
+      <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -380,22 +398,22 @@ export default function GenomicResearchHub() {
           />
           
           {/* Results Header */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800">
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
                 {sortedGenes.length} genes found
               </h2>
-              <p className="text-slate-600">
+              <p className="text-sm sm:text-base text-slate-600">
                 {searchQuery && `Results for "${searchQuery}"`}
                 {filters.trait !== "all" && ` • ${filters.trait}`}
                 {filters.organism !== "all" && ` • ${filters.organism}`}
               </p>
             </div>
             
-            <div className="flex items-center gap-4">
-              <Label className="text-sm font-medium">Sort by:</Label>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Label className="text-sm font-medium hidden sm:inline">Sort by:</Label>
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
+                <SelectTrigger className="w-40 sm:w-48">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -411,7 +429,7 @@ export default function GenomicResearchHub() {
           
           {/* Gene Grid */}
           {sortedGenes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {sortedGenes.map((gene, index) => (
                 <motion.div
                   key={gene.id}

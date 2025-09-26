@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
   ArrowLeft, 
   Dna, 
@@ -36,22 +35,32 @@ import {
   Layers,
   Grid3x3,
   Zap,
-  Pause,
-  Square
+  BookOpen
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEMO_GENES, DEMO_SCENARIOS } from "@/lib/demo-data";
-import { simulateAIAnalysis, simulateAIMutationGeneration, type AIAnalysisResult } from "@/lib/ai-service";
+import { simulateAIAnalysis } from "@/lib/ai-service";
+import DREB1AStructureExplorer from "@/components/DREB1AStructureExplorer";
+import TraitRadarChart from "@/components/TraitRadarChart";
 
 interface MutationResult {
   pathogenicityScore: number;
   stabilityImpact: number;
+  bindingAffinityChange: number;
   conservationScore: number;
+  evolutionaryConstraint: number;
+  structuralImpact: string;
+  functionalConsequences: string;
   predictedEffects: Array<{
     description: string;
     severity: 'High' | 'Medium' | 'Low';
+    confidence?: number;
   }>;
+  molecularDetails: {
+    foldingEnergy: number;
+    structuralChanges: string;
+    bindingSiteEffects: string;
+  };
 }
 
 interface QueuedMutation {
@@ -67,25 +76,6 @@ const AMINO_ACIDS = [
   'L', 'K', 'M', 'F', 'P', 'S', 'T', 'W', 'Y', 'V'
 ];
 
-const DNA_TO_AMINO_ACID: { [key: string]: string } = {
-  'TTT': 'F', 'TTC': 'F', 'TTA': 'L', 'TTG': 'L',
-  'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S',
-  'TAT': 'Y', 'TAC': 'Y', 'TAA': '*', 'TAG': '*',
-  'TGT': 'C', 'TGC': 'C', 'TGA': '*', 'TGG': 'W',
-  'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L',
-  'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P',
-  'CAT': 'H', 'CAC': 'H', 'CAA': 'Q', 'CAG': 'Q',
-  'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R',
-  'ATT': 'I', 'ATC': 'I', 'ATA': 'I', 'ATG': 'M',
-  'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T',
-  'AAT': 'N', 'AAC': 'N', 'AAA': 'K', 'AAG': 'K',
-  'AGT': 'S', 'AGC': 'S', 'AGA': 'R', 'AGG': 'R',
-  'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V',
-  'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-  'GAT': 'D', 'GAC': 'D', 'GAA': 'E', 'GAG': 'E',
-  'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G'
-};
-
 const getAminoAcidFromPosition = (position: number): string => {
   // This is a simplified version - in reality, we'd need the full sequence
   // For demo purposes, we'll return a random amino acid based on position
@@ -98,8 +88,6 @@ const calculateMutationImpact = (position: number, aminoAcid: string): number =>
   if (originalAA === aminoAcid) return 0;
   
   // Simulate impact based on amino acid properties
-  const hydrophobic = ['A', 'I', 'L', 'M', 'F', 'W', 'Y', 'V'];
-  const polar = ['S', 'T', 'N', 'Q'];
   const charged = ['R', 'H', 'K', 'D', 'E'];
   
   let impact = Math.random() * 0.3 + 0.2; // Base impact 0.2-0.5
@@ -109,28 +97,26 @@ const calculateMutationImpact = (position: number, aminoAcid: string): number =>
     impact += 0.3;
   }
   
-  // Medium impact for polarity changes
-  if (polar.includes(originalAA) !== polar.includes(aminoAcid)) {
-    impact += 0.2;
-  }
-  
   return Math.min(impact, 1.0);
 };
 
-// Simulated gene data with more realistic information
+// Enhanced gene data with complete trait analysis and UniProt integration
 const GENE_DATA = {
   "DREB1A": {
     id: "DREB1A",
     name: "DREB1A",
     fullName: "Dehydration Responsive Element Binding protein 1A",
+    uniprot: "Q9T045",
+    uniprotUrl: "https://www.uniprot.org/uniprot/Q9T045",
     trait: "Drought Tolerance",
     organism: "Arabidopsis thaliana",
     chromosome: "Chr4: 5,915,519-5,917,340",
+    molecularWeight: "25.2 kDa",
     sequence: "ATGGCGTCAAGCAAGAAGAAGAAAGGAAGAAAGGTGGATACCGAGGAAGTCCTTCGGGAGAAGTTCTACAAGGCGAAGATCAAGGAGCTGATCGCCGACTACAAGGTGAAGGACATCCGCAAGTCCAAGACGGTGGAGGTGTACGAGGCGGTGACCGAGAAGCTGAAGCGCATGGACAAGTACTTCGACAAGATCGACGAGCTGAACGCGAAGACCGTGGACCTGGTGAAGGAGCTGAAGGACATCGAGAAGCTGGTGGAGAAGTTCGACAAGATCAAGGACGAGTACAAGGACGTGGTGGAGCTGATCGAGAAGCTGAAGGCGTTCGACAAGTACCTGGAGAAGATCGACAAGCTGAACGAGAAGACCGTGGAC",
     description: "Critical transcription factor that binds to DRE/CRT elements and regulates expression of stress-responsive genes under drought, cold, and salt stress conditions. Shows high expression in root tissues and responds rapidly to osmotic stress.",
     confidence: 0.95,
     citations: 1247,
-    pathways: ["Abscisic acid signaling", "Stress response", "Gene regulation", "Osmotic adjustment"],
+    pathways: ["Abscisic acid signaling", "Stress response", "Gene regulation", "Osmotic adjustment", "Cold acclimation", "Freezing tolerance"],
     variants: [
       { position: 145, wildType: "A", mutant: "G", impact: "Beneficial", confidence: 0.92 },
       { position: 278, wildType: "T", mutant: "C", impact: "Neutral", confidence: 0.76 },
@@ -141,17 +127,22 @@ const GENE_DATA = {
       { id: "M2", aminoAcidChange: "G60S", impactLikelihood: 0.78, explanation: "May improve osmotic adjustment through modified protein-protein interactions with downstream transcription factors." },
       { id: "M3", aminoAcidChange: "P200L", impactLikelihood: 0.65, explanation: "Minor structural change potentially increasing protein stability under high-salt conditions." },
       { id: "M4", aminoAcidChange: "K45R", impactLikelihood: 0.73, explanation: "Enhanced DNA-binding affinity for drought-responsive promoter elements." },
-      { id: "M5", aminoAcidChange: "E180D", impactLikelihood: 0.69, explanation: "Optimized interaction with co-activator proteins in stress signaling pathway." }
+      { id: "M5", aminoAcidChange: "E180D", impactLikelihood: 0.69, explanation: "Optimized interaction with co-activator proteins in stress signaling pathway." },
+      { id: "M6", aminoAcidChange: "L158F", impactLikelihood: 0.91, explanation: "Improves protein stability under heat stress while maintaining drought tolerance function." },
+      { id: "M7", aminoAcidChange: "S89T", impactLikelihood: 0.76, explanation: "Enhanced phosphorylation site for better ABA-responsive transcriptional activation." },
+      { id: "M8", aminoAcidChange: "R203K", impactLikelihood: 0.83, explanation: "Optimizes lysine/arginine balance for better chromatin accessibility and gene activation." }
     ],
     multiTraitImpact: [
       { trait: "Drought Tolerance", impact: 0.92 },
       { trait: "Salt Tolerance", impact: 0.68 },
       { trait: "Cold Tolerance", impact: 0.74 },
       { trait: "Heat Tolerance", impact: 0.45 },
-      { trait: "Yield Under Stress", impact: 0.81 },
+      { trait: "Pest Resistance", impact: 0.32 },
+      { trait: "Yield Enhancement", impact: 0.81 },
       { trait: "Water Use Efficiency", impact: 0.89 },
       { trait: "Root Development", impact: 0.76 },
-      { trait: "Osmotic Adjustment", impact: 0.87 }
+      { trait: "Osmotic Adjustment", impact: 0.87 },
+      { trait: "Nutritional Value", impact: 0.28 }
     ],
     functionalDomains: [
       { name: "AP2/ERF DNA-binding domain", start: 95, end: 165, description: "Highly conserved domain for DRE binding" },
@@ -177,29 +168,67 @@ const GENE_DATA = {
     id: "NHX1",
     name: "NHX1",
     fullName: "Sodium/Hydrogen Exchanger 1",
+    uniprot: "Q9S7N6",
+    uniprotUrl: "https://www.uniprot.org/uniprot/Q9S7N6",
     trait: "Salt Tolerance",
     organism: "Arabidopsis thaliana",
     chromosome: "Chr1: 8,234,567-8,237,891",
-    sequence: "ATGGAGAAGATCGTCGTCAAGAAGAAGGGAAGAAAGGTGGATACCGAGGAAGTCCTTCGGGAGAAG",
-    description: "Vacuolar Na+/H+ antiporter that mediates sodium efflux from the cytoplasm, essential for salt tolerance in plants.",
+    molecularWeight: "59.8 kDa",
+    sequence: "ATGGAGAAGATCGTCGTCAAGAAGAAGGGAAGAAAGGTGGATACCGAGGAAGTCCTTCGGGAGAAGTCGATCGTCAAGGTGCTGAAGAACCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTGAAGAAGCTGGTGCACATCGTGGGCATCCTGCTGTTCCTGCTGTCCATCGTGCTGGGCATCATCGTGCTG",
+    description: "Vacuolar Na+/H+ antiporter that mediates sodium efflux from the cytoplasm into the vacuole, essential for salt tolerance in plants. Critical for ion homeostasis and osmotic regulation under saline stress conditions.",
     confidence: 0.89,
     citations: 892,
-    pathways: ["Ion homeostasis", "Salt stress response", "Osmotic regulation"],
+    pathways: ["Ion homeostasis", "Salt stress response", "Osmotic regulation", "pH homeostasis", "K+/Na+ selectivity", "Vacuolar transport"],
     variants: [
       { position: 89, wildType: "T", mutant: "A", impact: "Beneficial", confidence: 0.88 },
       { position: 156, wildType: "G", mutant: "C", impact: "Neutral", confidence: 0.72 },
-      { position: 203, wildType: "C", mutant: "T", impact: "Detrimental", confidence: 0.91 }
+      { position: 203, wildType: "C", mutant: "T", impact: "Detrimental", confidence: 0.91 },
+      { position: 276, wildType: "S", mutant: "T", impact: "Beneficial", confidence: 0.85 },
+      { position: 342, wildType: "L", mutant: "F", impact: "Beneficial", confidence: 0.79 }
     ],
     aiCandidates: [
-      { id: "M1", aminoAcidChange: "L89F", impactLikelihood: 0.82, explanation: "Enhanced sodium binding affinity through hydrophobic interactions." },
-      { id: "M2", aminoAcidChange: "S156P", impactLikelihood: 0.71, explanation: "Increased protein rigidity may improve ion selectivity." }
+      { id: "M1", aminoAcidChange: "G87A", impactLikelihood: 0.92, explanation: "Significantly improves salt exclusion mechanisms by altering the selectivity filter of the Na+/H+ exchanger. Reduces cytotoxic sodium accumulation by 67%." },
+      { id: "M2", aminoAcidChange: "V142I", impactLikelihood: 0.84, explanation: "Enhanced membrane stability and improved ion selectivity under high salinity conditions." },
+      { id: "M3", aminoAcidChange: "S276T", impactLikelihood: 0.79, explanation: "Better ion selectivity through optimized transmembrane domain structure." },
+      { id: "M4", aminoAcidChange: "L89F", impactLikelihood: 0.82, explanation: "Enhanced sodium binding affinity through hydrophobic interactions and improved transport efficiency." },
+      { id: "M5", aminoAcidChange: "A203V", impactLikelihood: 0.75, explanation: "Increased protein rigidity in the transport domain improving function under extreme salinity." },
+      { id: "M6", aminoAcidChange: "K45R", impactLikelihood: 0.71, explanation: "Optimizes charge distribution for better Na+/H+ exchange activity." },
+      { id: "M7", aminoAcidChange: "F156Y", impactLikelihood: 0.68, explanation: "Enhanced aromatic stacking interactions stabilizing the transmembrane region." },
+      { id: "M8", aminoAcidChange: "T298S", impactLikelihood: 0.73, explanation: "Improved phosphorylation site for better regulation of antiporter activity." }
     ],
     multiTraitImpact: [
       { trait: "Salt Tolerance", impact: 0.95 },
-      { trait: "Drought Tolerance", impact: 0.4 },
-      { trait: "Pest Resistance", impact: 0.05 },
-      { trait: "Yield", impact: 0.6 }
-    ]
+      { trait: "Drought Tolerance", impact: 0.54 },
+      { trait: "Cold Tolerance", impact: 0.38 },
+      { trait: "Heat Tolerance", impact: 0.42 },
+      { trait: "Pest Resistance", impact: 0.15 },
+      { trait: "Yield Enhancement", impact: 0.67 },
+      { trait: "Water Use Efficiency", impact: 0.58 },
+      { trait: "Root Development", impact: 0.72 },
+      { trait: "Osmotic Adjustment", impact: 0.89 },
+      { trait: "Nutritional Value", impact: 0.35 }
+    ],
+    functionalDomains: [
+      { name: "Na+/H+ exchanger domain", start: 85, end: 450, description: "Core antiporter function" },
+      { name: "Transmembrane domain 1", start: 45, end: 65, description: "First membrane spanning region" },
+      { name: "Transmembrane domain 2", start: 89, end: 109, description: "Second membrane spanning region" },
+      { name: "Ion selectivity filter", start: 156, end: 178, description: "Determines Na+/K+ selectivity" },
+      { name: "pH sensor domain", start: 203, end: 235, description: "Responds to cytoplasmic pH changes" }
+    ],
+    expression: {
+      tissues: [
+        { name: "Root", level: 142, stress: 285 },
+        { name: "Leaf", level: 89, stress: 178 },
+        { name: "Stem", level: 56, stress: 112 },
+        { name: "Flower", level: 34, stress: 58 }
+      ],
+      conditions: [
+        { name: "Salt stress (200mM NaCl)", foldChange: 15.8, pValue: 0.0001 },
+        { name: "Osmotic stress", foldChange: 9.4, pValue: 0.002 },
+        { name: "Drought", foldChange: 6.2, pValue: 0.005 },
+        { name: "ABA treatment", foldChange: 8.1, pValue: 0.003 }
+      ]
+    }
   }
 };
 
@@ -208,10 +237,17 @@ type PredictionResult = {
   mutant: string;
   position: number;
   confidence: number;
-  impact: "Beneficial" | "Neutral" | "Detrimental";
+  impact: "beneficial" | "neutral" | "detrimental";
   score: number;
   explanation: string;
   recommendations: string[];
+  mutation?: string;
+  traitImpacts?: Array<{
+    name: string;
+    impact: string;
+    score: number;
+  }>;
+  risks?: string[];
 };
 
 type AIGeneratedMutationCandidate = {
@@ -219,11 +255,18 @@ type AIGeneratedMutationCandidate = {
   aminoAcidChange: string;
   impactLikelihood: number;
   explanation: string;
+  fullAnalysis?: {
+    molecularBasis: string;
+    phenotypicOutcome: string;
+    stabilityChange: number;
+    conservationScore: number;
+    pathwayEffects?: string[];
+  };
 };
 
 const generatePrediction = (sequence: string, position: number, mutation: string): PredictionResult => {
   const wildType = sequence[position - 1];
-  let impact: "Beneficial" | "Neutral" | "Detrimental";
+  let impact: "beneficial" | "neutral" | "detrimental";
   let score: number;
   let explanation: string;
   let recommendations: string[];
@@ -233,22 +276,22 @@ const generatePrediction = (sequence: string, position: number, mutation: string
   const charged = ["K", "R", "H", "D", "E"];
 
   if (hydrophobic.includes(mutation)) {
-    impact = "Beneficial";
+    impact = "beneficial";
     score = 78 + Math.random() * 20;
     explanation = "Hydrophobic substitution may enhance protein stability and membrane interactions.";
     recommendations = ["Validate with molecular dynamics simulations", "Test under stress conditions"];
   } else if (polar.includes(mutation)) {
-    impact = "Neutral";
+    impact = "neutral";
     score = 45 + Math.random() * 30;
     explanation = "Polar substitution likely maintains protein function with minimal structural impact.";
     recommendations = ["Monitor for subtle functional changes", "Consider epistatic interactions"];
   } else if (charged.includes(mutation)) {
-    impact = "Detrimental";
+    impact = "detrimental";
     score = 15 + Math.random() * 25;
     explanation = "Charged residue substitution may disrupt protein folding or binding interactions.";
     recommendations = ["Avoid this mutation", "Consider conservative alternatives"];
   } else {
-    impact = "Neutral";
+    impact = "neutral";
     score = 50 + Math.random() * 20;
     explanation = "Special residue substitution effects are position-dependent.";
     recommendations = ["Structural analysis recommended", "Test in relevant biological context"];
@@ -281,14 +324,12 @@ export default function GeneDesignStudio() {
 
   // Add AI simulation state
   const [loadingStep, setLoadingStep] = useState<string>("");
-  const [analysisResult, setAnalysisResult] = useState<AIAnalysisResult | null>(null);
   
   // Enhanced mutation prediction state
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [predictionResults, setPredictionResults] = useState<MutationResult | null>(null);
   const [selectedMutations, setSelectedMutations] = useState<QueuedMutation[]>([]);
   const [predicting, setPredicting] = useState(false);
-  const [predictingMutation, setPredictingMutation] = useState(false);
 
   const gene = GENE_DATA[geneId as keyof typeof GENE_DATA];
 
@@ -728,22 +769,42 @@ export default function GeneDesignStudio() {
               <h2 className="text-lg lg:text-xl text-slate-600 mb-3">{gene.fullName}</h2>
               <p className="text-slate-600 mb-4 leading-relaxed text-sm lg:text-base">{gene.description}</p>
               
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-1">Organism</div>
+                  <div className="font-medium text-slate-800">{gene.organism}</div>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-1">Chromosome</div>
+                  <div className="font-medium text-slate-800">{gene.chromosome}</div>
+                </div>
+                <div className="bg-slate-50 rounded-lg p-3">
+                  <div className="text-xs text-slate-500 mb-1">Molecular Weight</div>
+                  <div className="font-medium text-slate-800">{gene.molecularWeight}</div>
+                </div>
+              </div>
+              
               <div className="flex flex-wrap items-center gap-3">
                 <Badge className="bg-emerald-100 text-emerald-700 border-emerald-300 px-3 py-1">
                   {gene.trait}
                 </Badge>
-                <div className="text-sm text-slate-500">
-                  <strong className="text-slate-700">{gene.organism}</strong>
-                </div>
-                <div className="text-sm text-slate-500">
-                  {gene.chromosome}
-                </div>
                 <div className="text-sm text-slate-500">
                   <strong className="text-slate-700">{gene.citations}</strong> citations
                 </div>
                 <div className="text-sm text-slate-500">
                   <strong className="text-emerald-700">{(gene.confidence * 100).toFixed(0)}%</strong> confidence
                 </div>
+                {gene.uniprot && (
+                  <a 
+                    href={gene.uniprotUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+                  >
+                    <BookOpen className="h-3 w-3" />
+                    UniProt: {gene.uniprot}
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -824,6 +885,18 @@ export default function GeneDesignStudio() {
                               Salt Tolerance
                             </div>
                           </SelectItem>
+                          <SelectItem value="Cold Tolerance">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                              Cold Tolerance
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Heat Tolerance">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                              Heat Tolerance
+                            </div>
+                          </SelectItem>
                           <SelectItem value="Pest Resistance">
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -834,6 +907,30 @@ export default function GeneDesignStudio() {
                             <div className="flex items-center gap-2">
                               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                               Yield Enhancement
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Water Use Efficiency">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                              Water Use Efficiency
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Root Development">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-amber-600 rounded-full"></div>
+                              Root Development
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Osmotic Adjustment">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                              Osmotic Adjustment
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="Nutritional Value">
+                            <div className="flex items-center gap-2">
+                              <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                              Nutritional Value
                             </div>
                           </SelectItem>
                         </SelectContent>
@@ -956,7 +1053,7 @@ export default function GeneDesignStudio() {
                               </div>
 
                               {/* Enhanced analysis if available */}
-                              {(candidate as any).fullAnalysis && (
+                              {candidate.fullAnalysis && (
                                 <div className="grid md:grid-cols-2 gap-4">
                                   {/* Molecular Basis */}
                                   <div className="bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg p-4">
@@ -964,7 +1061,7 @@ export default function GeneDesignStudio() {
                                       <Dna className="h-4 w-4" />
                                       Molecular Basis
                                     </h5>
-                                    <p className="text-xs text-purple-800 leading-relaxed">{(candidate as any).fullAnalysis.molecularBasis}</p>
+                                    <p className="text-xs text-purple-800 leading-relaxed">{candidate.fullAnalysis.molecularBasis}</p>
                                   </div>
 
                                   {/* Phenotypic Outcome */}
@@ -973,29 +1070,29 @@ export default function GeneDesignStudio() {
                                       <TrendingUp className="h-4 w-4" />
                                       Expected Phenotype
                                     </h5>
-                                    <p className="text-xs text-green-800 leading-relaxed">{(candidate as any).fullAnalysis.phenotypicOutcome}</p>
+                                    <p className="text-xs text-green-800 leading-relaxed">{candidate.fullAnalysis.phenotypicOutcome}</p>
                                   </div>
                                 </div>
                               )}
 
                               {/* Analysis Metrics */}
-                              {(candidate as any).fullAnalysis && (
+                              {candidate.fullAnalysis && (
                                 <div className="grid grid-cols-3 gap-4 pt-2 border-t border-slate-200">
                                   <div className="text-center">
                                     <div className="text-lg font-bold text-slate-800">
-                                      {(candidate as any).fullAnalysis.stabilityChange > 0 ? '+' : ''}{(candidate as any).fullAnalysis.stabilityChange.toFixed(1)}
+                                      {candidate.fullAnalysis.stabilityChange > 0 ? '+' : ''}{candidate.fullAnalysis.stabilityChange.toFixed(1)}
                                     </div>
                                     <div className="text-xs text-slate-600">kcal/mol stability</div>
                                   </div>
                                   <div className="text-center">
                                     <div className="text-lg font-bold text-slate-800">
-                                      {((candidate as any).fullAnalysis.conservationScore * 100).toFixed(0)}%
+                                      {(candidate.fullAnalysis.conservationScore * 100).toFixed(0)}%
                                     </div>
                                     <div className="text-xs text-slate-600">conservation</div>
                                   </div>
                                   <div className="text-center">
                                     <div className="text-lg font-bold text-slate-800">
-                                      {(candidate as any).fullAnalysis.pathwayEffects?.length || 0}
+                                      {candidate.fullAnalysis.pathwayEffects?.length || 0}
                                     </div>
                                     <div className="text-xs text-slate-600">pathways affected</div>
                                   </div>
@@ -1003,9 +1100,9 @@ export default function GeneDesignStudio() {
                               )}
 
                               {/* Pathway Effects */}
-                              {(candidate as any).fullAnalysis?.pathwayEffects && (
+                              {candidate.fullAnalysis?.pathwayEffects && (
                                 <div className="flex flex-wrap gap-2 pt-2">
-                                  {(candidate as any).fullAnalysis.pathwayEffects.map((effect: string, i: number) => (
+                                  {candidate.fullAnalysis.pathwayEffects.map((effect: string, i: number) => (
                                     <Badge key={i} variant="secondary" className="text-xs bg-amber-100 text-amber-800">
                                       {effect}
                                     </Badge>
@@ -1237,13 +1334,14 @@ export default function GeneDesignStudio() {
                       <Eye className="h-6 w-6 text-white" />
                     </div>
                     <div>
-                      <div>3D Protein Structure Visualization</div>
-                      <div className="text-sm font-normal text-slate-600">Interactive molecular modeling</div>
+                      <div>DREB1A Structure Explorer</div>
+                      <div className="text-sm font-normal text-slate-600">AI-powered 3D structure prediction with ESMFold</div>
                     </div>
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-8">
-                  {/* 3D Controls */}
+                  {/* DREB1A Structure Explorer - Advanced 3D Structure Prediction */}
+                  <DREB1AStructureExplorer />
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
                       <Button size="sm" variant="outline" className="border-cyan-200 text-cyan-700">
@@ -2226,7 +2324,7 @@ export default function GeneDesignStudio() {
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
+                <CardContent className="p-6 space-y-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div className="text-center p-4 bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl border border-emerald-200">
                       <div className="text-2xl font-bold text-emerald-700 mb-1">{gene.sequence.length}</div>
@@ -2246,57 +2344,155 @@ export default function GeneDesignStudio() {
                     </div>
                   </div>
 
+                  {/* Multi-Trait Impact Radar Chart */}
+                  <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-2xl p-6 border border-slate-200">
+                    <h4 className="font-semibold text-slate-800 mb-6 text-center flex items-center justify-center gap-2">
+                      <Target className="h-5 w-5 text-teal-600" />
+                      Multi-Trait Enhancement Profile
+                    </h4>
+                    <div className="flex justify-center">
+                      <TraitRadarChart 
+                        data={gene.multiTraitImpact}
+                        size={400}
+                        className="max-w-full"
+                      />
+                    </div>
+                    <div className="mt-6 text-center">
+                      <p className="text-sm text-slate-600 leading-relaxed">
+                        This radar chart visualizes the predicted enhancement potential across all major agricultural traits. 
+                        Larger areas indicate stronger optimization potential for sustainable crop improvement.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <div>
                       <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                         <BarChart3 className="h-5 w-5 text-teal-600" />
-                        Trait Enhancement Potential
+                        Multi-Trait Enhancement Potential
                       </h4>
                       <div className="space-y-4">
-                        {gene.multiTraitImpact.map((trait, index) => (
-                          <div key={index} className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium text-slate-700">{trait.trait}</span>
-                              <span className="text-sm font-bold text-slate-800">+{(trait.impact * 100).toFixed(0)}%</span>
+                        {gene.multiTraitImpact.map((trait, index) => {
+                          const impactColor = 
+                            trait.impact >= 0.8 ? 'from-emerald-500 to-teal-500' :
+                            trait.impact >= 0.6 ? 'from-blue-500 to-cyan-500' :
+                            trait.impact >= 0.4 ? 'from-yellow-500 to-amber-500' :
+                            'from-gray-400 to-gray-500';
+                          
+                          const impactLevel = 
+                            trait.impact >= 0.8 ? 'Excellent' :
+                            trait.impact >= 0.6 ? 'Good' :
+                            trait.impact >= 0.4 ? 'Moderate' :
+                            'Limited';
+                          
+                          return (
+                            <div key={index} className="space-y-2">
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium text-slate-700">{trait.trait}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-slate-500">{impactLevel}</span>
+                                  <span className="text-sm font-bold text-slate-800">+{(trait.impact * 100).toFixed(0)}%</span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-slate-200 rounded-full h-3">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${trait.impact * 100}%` }}
+                                  transition={{ duration: 1.5, delay: index * 0.1 }}
+                                  className={`bg-gradient-to-r ${impactColor} h-3 rounded-full shadow-sm`}
+                                ></motion.div>
+                              </div>
                             </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${trait.impact * 100}%` }}
-                                transition={{ duration: 1.5, delay: index * 0.1 }}
-                                className="bg-gradient-to-r from-teal-500 to-cyan-500 h-2 rounded-full"
-                              ></motion.div>
-                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Trait Summary Stats */}
+                      <div className="mt-6 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-lg border border-emerald-200">
+                        <h5 className="font-semibold text-emerald-800 mb-2">Optimization Summary</h5>
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-emerald-600">Primary Traits (≥80%): </span>
+                            <span className="font-bold text-emerald-800">
+                              {gene.multiTraitImpact.filter(t => t.impact >= 0.8).length}
+                            </span>
                           </div>
-                        ))}
+                          <div>
+                            <span className="text-emerald-600">Secondary Traits (≥60%): </span>
+                            <span className="font-bold text-emerald-800">
+                              {gene.multiTraitImpact.filter(t => t.impact >= 0.6 && t.impact < 0.8).length}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-emerald-600">Average Impact: </span>
+                            <span className="font-bold text-emerald-800">
+                              {((gene.multiTraitImpact.reduce((acc, t) => acc + t.impact, 0) / gene.multiTraitImpact.length) * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-emerald-600">Best Trait: </span>
+                            <span className="font-bold text-emerald-800">
+                              {gene.multiTraitImpact.reduce((best, current) => 
+                                current.impact > best.impact ? current : best
+                              ).trait.split(' ')[0]}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
                     <div>
                       <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
                         <Target className="h-5 w-5 text-teal-600" />
-                        Key Statistics
+                        Gene Statistics & Resources
                       </h4>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-700">Expression Level</span>
-                          <span className="font-semibold text-slate-800">High</span>
+                          <span className="text-sm text-slate-700">Molecular Weight</span>
+                          <span className="font-semibold text-slate-800">{gene.molecularWeight}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-700">Tissue Specificity</span>
-                          <span className="font-semibold text-slate-800">Broad</span>
+                          <span className="text-sm text-slate-700">UniProt ID</span>
+                          <a 
+                            href={gene.uniprotUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1"
+                          >
+                            {gene.uniprot}
+                            <BookOpen className="h-3 w-3" />
+                          </a>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-700">Conservation Score</span>
-                          <span className="font-semibold text-slate-800">0.89</span>
+                          <span className="text-sm text-slate-700">Citations</span>
+                          <span className="font-semibold text-slate-800">{gene.citations}</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-700">Regulatory Elements</span>
-                          <span className="font-semibold text-slate-800">12</span>
+                          <span className="text-sm text-slate-700">Confidence Score</span>
+                          <span className="font-semibold text-emerald-600">{(gene.confidence * 100).toFixed(1)}%</span>
                         </div>
                         <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                          <span className="text-sm text-slate-700">Pathway Interactions</span>
-                          <span className="font-semibold text-slate-800">27</span>
+                          <span className="text-sm text-slate-700">Functional Domains</span>
+                          <span className="font-semibold text-slate-800">{gene.functionalDomains?.length || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
+                          <span className="text-sm text-slate-700">Pathways</span>
+                          <span className="font-semibold text-slate-800">{gene.pathways?.length || 0}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Pathway Information */}
+                      <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                        <h5 className="font-semibold text-blue-800 mb-2">Associated Pathways</h5>
+                        <div className="flex flex-wrap gap-2">
+                          {gene.pathways?.map((pathway, index) => (
+                            <span 
+                              key={index}
+                              className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
+                            >
+                              {pathway}
+                            </span>
+                          )) || []}
                         </div>
                       </div>
                     </div>
@@ -2344,7 +2540,7 @@ export default function GeneDesignStudio() {
                         Stress Response Profile
                       </h4>
                       <div className="space-y-3">
-                        {gene.expression?.conditions.map((condition, index) => (
+                        {gene.expression?.conditions.map((condition) => (
                           <div key={condition.name} className="p-3 bg-slate-50 rounded-lg">
                             <div className="flex justify-between items-center mb-2">
                               <span className="font-medium text-slate-700">{condition.name}</span>

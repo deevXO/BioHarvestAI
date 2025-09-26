@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Search,
   Star,
+  Award,
+  Shield,
   Target,
   Brain,
   Activity,
@@ -133,42 +135,28 @@ const HeroSection = () => {
             </motion.div>
           </div>
 
-          {/* Right Column - DNA Animation GIF */}
+          {/* Right Column - Simplified Visual */}
           <motion.div 
             className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center order-1 lg:order-2"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: isVisible ? 1 : 0, scale: isVisible ? 1 : 0.9 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            {/* DNA Animation Container */}
+            {/* Simplified 3D Visual */}
             <div className="relative">
-              {/* Background glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/30 to-teal-500/30 rounded-full blur-3xl scale-110"></div>
-              
-              {/* DNA Animation GIF */}
-              <div className="relative z-10 w-80 h-80 sm:w-96 sm:h-96 lg:w-[500px] lg:h-[500px] rounded-full overflow-hidden bg-gradient-to-br from-emerald-900/40 to-teal-900/40 backdrop-blur-sm border border-emerald-400/20 shadow-2xl">
-                <img 
-                  src="/DNA  loop animation.gif" 
-                  alt="DNA Double Helix Animation" 
-                  className="w-full h-full object-cover rounded-full"
-                  style={{
-                    filter: 'brightness(1.2) contrast(1.1) saturate(1.3)'
-                  }}
-                />
-                
-                {/* Overlay gradient for better integration */}
-                <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 via-transparent to-teal-900/20 rounded-full"></div>
+              <div className="w-80 h-80 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-full backdrop-blur-sm border border-white/20 flex items-center justify-center">
+                <div className="w-60 h-60 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center shadow-2xl">
+                  <Dna className="h-24 w-24 text-white" />
+                </div>
               </div>
               
-              {/* Floating particles around DNA */}
-              <div className="absolute top-8 right-8 w-3 h-3 bg-emerald-400 rounded-full animate-pulse opacity-70"></div>
-              <div className="absolute top-20 left-8 w-2 h-2 bg-teal-400 rounded-full animate-pulse opacity-60" style={{animationDelay: '0.5s'}}></div>
-              <div className="absolute bottom-16 right-12 w-4 h-4 bg-emerald-300 rounded-full animate-pulse opacity-50" style={{animationDelay: '1s'}}></div>
-              <div className="absolute bottom-8 left-16 w-2 h-2 bg-teal-300 rounded-full animate-pulse opacity-60" style={{animationDelay: '1.5s'}}></div>
-              
-              {/* Orbital rings */}
-              <div className="absolute inset-0 border border-emerald-400/10 rounded-full animate-spin" style={{animationDuration: '20s'}}></div>
-              <div className="absolute inset-4 border border-teal-400/10 rounded-full animate-spin" style={{animationDuration: '15s', animationDirection: 'reverse'}}></div>
+              {/* Static floating elements - no animations */}
+              <div className="absolute top-10 right-10 w-12 h-12 bg-emerald-400/30 rounded-full flex items-center justify-center">
+                <Star className="h-6 w-6 text-emerald-200" />
+              </div>
+              <div className="absolute bottom-10 left-10 w-10 h-10 bg-teal-400/30 rounded-full flex items-center justify-center">
+                <Activity className="h-5 w-5 text-teal-200" />
+              </div>
             </div>
           </motion.div>
         </div>
@@ -585,6 +573,8 @@ const HowItWorksCarousel = () => {
 
 // Optimized Featured Genes Section with cleaner modal system
 const FeaturedGenesSection = () => {
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+
   const featuredGenes = useMemo(() => [
     {
       id: "DREB1A",
@@ -676,6 +666,8 @@ const FeaturedGenesSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
               viewport={{ once: true }}
+              onMouseEnter={() => setHoveredCard(gene.id)}
+              onMouseLeave={() => setHoveredCard(null)}
               className="group"
             >
               <Link href={`/genes/${gene.id}`}>
@@ -759,12 +751,9 @@ const FeaturedGenesSection = () => {
                     
                     {/* Progress Bar */}
                     <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
-                      <motion.div 
+                      <div 
                         className={`bg-gradient-to-r ${gene.gradient} h-2 rounded-full transition-all duration-1000 ease-out`}
-                        initial={{ width: "0%" }}
-                        whileInView={{ width: `${gene.impact * 100}%` }}
-                        transition={{ duration: 1, delay: index * 0.2 }}
-                        viewport={{ once: true }}
+                        style={{ width: `${gene.impact * 100}%` }}
                       />
                     </div>
                   </CardContent>

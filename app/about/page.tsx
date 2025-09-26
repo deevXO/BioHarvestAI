@@ -14,22 +14,22 @@ export default function AboutPage() {
         </svg>
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-16">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16">
         {/* Hero Section */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-12 sm:mb-16"
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-medium mb-6">
             <FlaskConical className="h-4 w-4" />
             Pioneering Agricultural Innovation
           </div>
-          <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent mb-6">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-700 bg-clip-text text-transparent mb-6">
             About BioHarvest AI
           </h1>
-          <p className="text-xl text-slate-600 leading-relaxed max-w-4xl mx-auto">
+          <p className="text-lg sm:text-xl text-slate-600 leading-relaxed max-w-4xl mx-auto px-4 sm:px-0">
             Empowering the next generation of sustainable agriculture through cutting-edge AI and genetic intelligence. 
             We&apos;re building the future of climate-resilient crops, one gene at a time.
           </p>
@@ -40,10 +40,10 @@ export default function AboutPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="mb-20"
+          className="mb-16 sm:mb-20"
         >
-          <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-8">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
+          <Card className="border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 sm:p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
               <div>
                 <h2 className="text-3xl font-bold text-emerald-800 mb-6">Our Mission</h2>
                 <p className="text-lg text-slate-700 leading-relaxed mb-6">
@@ -55,7 +55,7 @@ export default function AboutPage() {
                   withstand the challenges of tomorrow while ensuring food security for a growing global population.
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
                 <div className="text-center p-6 bg-white/50 rounded-xl">
                   <div className="text-3xl font-bold text-emerald-700">50K+</div>
                   <div className="text-sm text-slate-600">Genes Analyzed</div>
@@ -85,7 +85,7 @@ export default function AboutPage() {
           className="mb-20"
         >
           <h2 className="text-3xl font-bold text-center text-slate-800 mb-12">Our Core Values</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
             {[
               {
                 icon: Dna,
@@ -144,7 +144,7 @@ export default function AboutPage() {
           className="mb-20"
         >
           <h2 className="text-3xl font-bold text-center text-slate-800 mb-12">Research Focus Areas</h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {[
               {
                 icon: Target,

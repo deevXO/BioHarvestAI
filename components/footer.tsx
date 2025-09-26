@@ -12,8 +12,8 @@ export function Footer() {
         <div className="absolute top-1/2 left-1/3 h-24 w-24 bg-cyan-400/20 rounded-full blur-xl" />
       </div>
       
-      <div className="relative z-10 mx-auto max-w-7xl px-6 py-16">
-        <div className="grid gap-12 lg:grid-cols-4 md:grid-cols-2">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 py-12 sm:py-16">
+        <div className="grid gap-8 sm:gap-12 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Section */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center gap-3">
